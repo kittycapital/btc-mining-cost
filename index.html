@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비트코인 채굴 원가</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e4e4e7;
+            font-family: 'Noto Sans KR', sans-serif;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .title-section h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+
+        .title-section p {
+            font-size: 0.875rem;
+            color: #71717a;
+        }
+
+        .stats {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            text-align: right;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .stat-value.price {
+            color: #a1a1aa;
+        }
+
+        .stat-value.cost {
+            color: #22c55e;
+        }
+
+        .stat-sub {
+            font-size: 0.7rem;
+            color: #52525b;
+            margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chart-container {
+            background: linear-gradient(180deg, #111118 0%, #0a0a0f 100%);
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #22c55e33, transparent);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #a1a1aa;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .legend-color.price {
+            background: #71717a;
+        }
+
+        .legend-color.cost {
+            background: #22c55e;
+        }
+
+        .last-updated {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.75rem;
+            color: #52525b;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #71717a;
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #ef4444;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+            }
+
+            .stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stat-card {
+                text-align: left;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>비트코인 채굴 원가</h1>
+                <p>Bitcoin Mining Cost vs Price · 3 Year</p>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Bitcoin Price</div>
+                    <div class="stat-value price" id="btc-price">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mining Cost</div>
+                    <div class="stat-value cost" id="mining-cost">--</div>
+                    <div class="stat-sub" id="cost-range"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color price"></div>
+                    <span>BTC Price</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color cost"></div>
+                    <span>Mining Cost (±전기료)</span>
+                </div>
+            </div>
+            <div class="chart-wrapper" id="chart-wrapper">
+                <div class="loading">Loading data...</div>
+            </div>
+        </div>
+
+        <div class="last-updated" id="last-updated"></div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) throw new Error('Data not found');
+                return await response.json();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                return null;
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('btc-price').textContent = formatCurrency(data.current_price);
+            document.getElementById('mining-cost').textContent = formatCurrency(data.current_cost_mid);
+            document.getElementById('cost-range').textContent = 
+                `${formatCurrency(data.current_cost_low)} - ${formatCurrency(data.current_cost_high)}`;
+        }
+
+        function createChart(data) {
+            const wrapper = document.getElementById('chart-wrapper');
+            wrapper.innerHTML = '<canvas id="miningChart"></canvas>';
+            
+            const ctx = document.getElementById('miningChart').getContext('2d');
+            
+            // Convert dates to Date objects
+            const dates = data.dates.map(d => new Date(d));
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'BTC Price',
+                            data: data.btc_prices,
+                            borderColor: '#71717a',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointHoverBackgroundColor: '#71717a',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Mining Cost High',
+                            data: data.mining_cost_high,
+                            borderColor: 'transparent',
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            fill: '+1',
+                            tension: 0.3,
+                            pointRadius: 0,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Mining Cost',
+                            data: data.mining_cost_mid,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            pointHoverBackgroundColor: '#22c55e',
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Mining Cost Low',
+                            data: data.mining_cost_low,
+                            borderColor: 'transparent',
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            fill: '-1',
+                            tension: 0.3,
+                            pointRadius: 0,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#18181b',
+                            borderColor: '#27272a',
+                            borderWidth: 1,
+                            titleColor: '#e4e4e7',
+                            bodyColor: '#a1a1aa',
+                            padding: 12,
+                            displayColors: true,
+                            filter: function(tooltipItem) {
+                                // Only show BTC Price and Mining Cost (mid)
+                                return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 2;
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    const date = new Date(context[0].parsed.x);
+                                    return date.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    });
+                                },
+                                label: function(context) {
+                                    const value = formatCurrency(context.raw);
+                                    if (context.datasetIndex === 0) {
+                                        return 'BTC Price: ' + value;
+                                    } else if (context.datasetIndex === 2) {
+                                        return 'Mining Cost: ' + value;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                                displayFormats: {
+                                    month: 'MMM yyyy'
+                                }
+                            },
+                            grid: {
+                                color: '#27272a',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#52525b',
+                                font: {
+                                    family: "'JetBrains Mono', monospace",
+                                    size: 11
+                                },
+                                maxTicksLimit: 12
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: {
+                                color: '#27272a',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: "'JetBrains Mono', monospace",
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'BTC Price',
+                                color: '#71717a',
+                                font: {
+                                    family: "'Noto Sans KR', sans-serif",
+                                    size: 11
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#22c55e',
+                                font: {
+                                    family: "'JetBrains Mono', monospace",
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Mining Cost',
+                                color: '#22c55e',
+                                font: {
+                                    family: "'Noto Sans KR', sans-serif",
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function init() {
+            const data = await loadData();
+            
+            if (!data || !data.dates || data.dates.length === 0) {
+                document.getElementById('chart-wrapper').innerHTML = 
+                    '<div class="error">데이터를 불러올 수 없습니다.</div>';
+                return;
+            }
+
+            // Update stats
+            updateStats(data);
+
+            // Create chart
+            createChart(data);
+
+            // Update last updated time
+            if (data.last_updated) {
+                document.getElementById('last-updated').textContent = 
+                    `Last updated: ${new Date(data.last_updated).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
