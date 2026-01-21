@@ -83,13 +83,6 @@
             color: #22c55e;
         }
 
-        .stat-sub {
-            font-size: 0.7rem;
-            color: #52525b;
-            margin-top: 2px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
         .chart-container {
             background: linear-gradient(180deg, #111118 0%, #0a0a0f 100%);
             border: 1px solid #27272a;
@@ -203,7 +196,6 @@
                 <div class="stat-card">
                     <div class="stat-label">Mining Cost</div>
                     <div class="stat-value cost" id="mining-cost">--</div>
-                    <div class="stat-sub" id="cost-range"></div>
                 </div>
             </div>
         </div>
@@ -216,7 +208,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color cost"></div>
-                    <span>Mining Cost (±전기료)</span>
+                    <span>Mining Cost</span>
                 </div>
             </div>
             <div class="chart-wrapper" id="chart-wrapper">
@@ -253,8 +245,6 @@
         function updateStats(data) {
             document.getElementById('btc-price').textContent = formatCurrency(data.current_price);
             document.getElementById('mining-cost').textContent = formatCurrency(data.current_cost_mid);
-            document.getElementById('cost-range').textContent = 
-                `${formatCurrency(data.current_cost_low)} - ${formatCurrency(data.current_cost_high)}`;
         }
 
         function createChart(data) {
@@ -284,16 +274,6 @@
                             yAxisID: 'y'
                         },
                         {
-                            label: 'Mining Cost High',
-                            data: data.mining_cost_high,
-                            borderColor: 'transparent',
-                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                            fill: '+1',
-                            tension: 0.3,
-                            pointRadius: 0,
-                            yAxisID: 'y1'
-                        },
-                        {
                             label: 'Mining Cost',
                             data: data.mining_cost_mid,
                             borderColor: '#22c55e',
@@ -303,16 +283,6 @@
                             pointRadius: 0,
                             pointHoverRadius: 4,
                             pointHoverBackgroundColor: '#22c55e',
-                            yAxisID: 'y1'
-                        },
-                        {
-                            label: 'Mining Cost Low',
-                            data: data.mining_cost_low,
-                            borderColor: 'transparent',
-                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                            fill: '-1',
-                            tension: 0.3,
-                            pointRadius: 0,
                             yAxisID: 'y1'
                         }
                     ]
@@ -337,8 +307,7 @@
                             padding: 12,
                             displayColors: true,
                             filter: function(tooltipItem) {
-                                // Only show BTC Price and Mining Cost (mid)
-                                return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 2;
+                                return true;
                             },
                             callbacks: {
                                 title: function(context) {
@@ -353,7 +322,7 @@
                                     const value = formatCurrency(context.raw);
                                     if (context.datasetIndex === 0) {
                                         return 'BTC Price: ' + value;
-                                    } else if (context.datasetIndex === 2) {
+                                    } else {
                                         return 'Mining Cost: ' + value;
                                     }
                                 }
