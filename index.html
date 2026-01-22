@@ -270,8 +270,7 @@
                             tension: 0.1,
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            pointHoverBackgroundColor: '#71717a',
-                            yAxisID: 'y'
+                            pointHoverBackgroundColor: '#71717a'
                         },
                         {
                             label: 'Mining Cost',
@@ -282,8 +281,7 @@
                             tension: 0.3,
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            pointHoverBackgroundColor: '#10b981',
-                            yAxisID: 'y1'
+                            pointHoverBackgroundColor: '#10b981'
                         }
                     ]
                 },
@@ -366,41 +364,6 @@
                                 },
                                 callback: function(value) {
                                     return '$' + (value / 1000).toFixed(0) + 'k';
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'BTC Price',
-                                color: '#71717a',
-                                font: {
-                                    family: "'Noto Sans KR', sans-serif",
-                                    size: 11
-                                }
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            position: 'right',
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#10b981',
-                                font: {
-                                    family: "'JetBrains Mono', monospace",
-                                    size: 11
-                                },
-                                callback: function(value) {
-                                    return '$' + (value / 1000).toFixed(0) + 'k';
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Mining Cost',
-                                color: '#10b981',
-                                font: {
-                                    family: "'Noto Sans KR', sans-serif",
-                                    size: 11
                                 }
                             }
                         }
