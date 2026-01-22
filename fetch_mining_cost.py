@@ -1,6 +1,6 @@
 """
 Bitcoin Mining Cost Calculator
-Fetches hashrate data from blockchain.com and calculates mining cost over 3 years.
+Fetches hashrate data from blockchain.com and calculates mining cost over 2 years.
 """
 
 import json
@@ -60,12 +60,12 @@ def calculate_mining_cost(hashrate_th_s, block_reward, electricity_price):
 
 
 def fetch_hashrate_data():
-    """Fetch 3 years of hashrate data from blockchain.com"""
+    """Fetch 2 years of hashrate data from blockchain.com"""
     print("📡 Fetching hashrate data from blockchain.com...")
     
     url = "https://api.blockchain.info/charts/hash-rate"
     params = {
-        'timespan': '3years',
+        'timespan': '2years',
         'format': 'json',
         'sampled': 'true'  # Reduces data points for performance
     }
@@ -84,12 +84,12 @@ def fetch_hashrate_data():
 
 
 def fetch_btc_price_data():
-    """Fetch 3 years of BTC price data from blockchain.com"""
+    """Fetch 2 years of BTC price data from blockchain.com"""
     print("📡 Fetching BTC price data from blockchain.com...")
     
     url = "https://api.blockchain.info/charts/market-price"
     params = {
-        'timespan': '3years',
+        'timespan': '2years',
         'format': 'json',
         'sampled': 'true'
     }
