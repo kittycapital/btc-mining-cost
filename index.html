@@ -83,6 +83,13 @@
             color: #10b981;
         }
 
+        .stat-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #10b98199;
+            margin-top: 2px;
+        }
+
         .chart-container {
             background: linear-gradient(180deg, #111118 0%, #0a0a0f 100%);
             border: 1px solid #27272a;
@@ -132,8 +139,12 @@
             background: #71717a;
         }
 
-        .legend-color.cost {
-            background: #10b981;
+        .legend-band {
+            width: 16px;
+            height: 10px;
+            border-radius: 2px;
+            background: #10b98130;
+            border: 1px solid #10b98160;
         }
 
         .last-updated {
@@ -196,6 +207,7 @@
                 <div class="stat-card">
                     <div class="stat-label">Mining Cost</div>
                     <div class="stat-value cost" id="mining-cost">--</div>
+                    <div class="stat-sub" id="mining-range"></div>
                 </div>
             </div>
         </div>
@@ -207,8 +219,8 @@
                     <span>BTC Price</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color cost"></div>
-                    <span>Mining Cost</span>
+                    <div class="legend-band"></div>
+                    <span>Mining Cost ($0.05–$0.07/kWh)</span>
                 </div>
             </div>
             <div class="chart-wrapper" id="chart-wrapper">
@@ -245,17 +257,18 @@
         function updateStats(data) {
             document.getElementById('btc-price').textContent = formatCurrency(data.current_price);
             document.getElementById('mining-cost').textContent = formatCurrency(data.current_cost_mid);
+            document.getElementById('mining-range').textContent =
+                formatCurrency(data.current_cost_low) + ' – ' + formatCurrency(data.current_cost_high);
         }
 
         function createChart(data) {
             const wrapper = document.getElementById('chart-wrapper');
             wrapper.innerHTML = '<canvas id="miningChart"></canvas>';
-            
+
             const ctx = document.getElementById('miningChart').getContext('2d');
-            
-            // Convert dates to Date objects
+
             const dates = data.dates.map(d => new Date(d));
-            
+
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -270,18 +283,32 @@
                             tension: 0.1,
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            pointHoverBackgroundColor: '#71717a'
+                            pointHoverBackgroundColor: '#71717a',
+                            order: 1
                         },
                         {
-                            label: 'Mining Cost',
-                            data: data.mining_cost_mid,
-                            borderColor: '#10b981',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
+                            label: 'Mining Cost High',
+                            data: data.mining_cost_high,
+                            borderColor: '#10b98140',
+                            backgroundColor: '#10b98118',
+                            borderWidth: 1.5,
                             tension: 0.3,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            pointHoverBackgroundColor: '#10b981'
+                            pointHoverRadius: 0,
+                            fill: '+1',
+                            order: 2
+                        },
+                        {
+                            label: 'Mining Cost Low',
+                            data: data.mining_cost_low,
+                            borderColor: '#10b98140',
+                            backgroundColor: '#10b98118',
+                            borderWidth: 1.5,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            fill: false,
+                            order: 3
                         }
                     ]
                 },
@@ -305,7 +332,7 @@
                             padding: 12,
                             displayColors: true,
                             filter: function(tooltipItem) {
-                                return true;
+                                return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 1;
                             },
                             callbacks: {
                                 title: function(context) {
@@ -317,12 +344,15 @@
                                     });
                                 },
                                 label: function(context) {
-                                    const value = formatCurrency(context.raw);
                                     if (context.datasetIndex === 0) {
-                                        return 'BTC Price: ' + value;
-                                    } else {
-                                        return 'Mining Cost: ' + value;
+                                        return 'BTC Price: ' + formatCurrency(context.raw);
+                                    } else if (context.datasetIndex === 1) {
+                                        const idx = context.dataIndex;
+                                        const low = context.chart.data.datasets[2].data[idx];
+                                        const high = context.raw;
+                                        return 'Mining Cost: ' + formatCurrency(low) + ' – ' + formatCurrency(high);
                                     }
+                                    return null;
                                 }
                             }
                         }
@@ -374,22 +404,18 @@
 
         async function init() {
             const data = await loadData();
-            
+
             if (!data || !data.dates || data.dates.length === 0) {
-                document.getElementById('chart-wrapper').innerHTML = 
+                document.getElementById('chart-wrapper').innerHTML =
                     '<div class="error">데이터를 불러올 수 없습니다.</div>';
                 return;
             }
 
-            // Update stats
             updateStats(data);
-
-            // Create chart
             createChart(data);
 
-            // Update last updated time
             if (data.last_updated) {
-                document.getElementById('last-updated').textContent = 
+                document.getElementById('last-updated').textContent =
                     `Last updated: ${new Date(data.last_updated).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
