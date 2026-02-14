@@ -10,185 +10,74 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0a0f;
-            color: #e4e4e7;
+            background: #0a0a0f; color: #e4e4e7;
             font-family: 'Noto Sans KR', sans-serif;
-            min-height: 100vh;
-            padding: 24px;
+            min-height: 100vh; padding: 24px;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
+        .container { max-width: 1200px; margin: 0 auto; }
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
         }
-
         .title-section h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            margin-bottom: 6px;
-            color: #ffffff;
+            font-size: 1.75rem; font-weight: 600;
+            letter-spacing: -0.02em; margin-bottom: 6px; color: #ffffff;
         }
-
-        .title-section p {
-            font-size: 0.875rem;
-            color: #71717a;
-        }
-
-        .stats {
-            display: flex;
-            gap: 32px;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            text-align: right;
-        }
-
+        .title-section p { font-size: 0.875rem; color: #71717a; }
+        .stats { display: flex; gap: 32px; flex-wrap: wrap; }
+        .stat-card { text-align: right; }
         .stat-label {
-            font-size: 0.75rem;
-            color: #71717a;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 4px;
+            font-size: 0.75rem; color: #71717a;
+            text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
         }
-
         .stat-value {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.5rem; font-weight: 600;
         }
-
-        .stat-value.price {
-            color: #a1a1aa;
-        }
-
-        .stat-value.cost {
-            color: #10b981;
-        }
-
+        .stat-value.price { color: #a1a1aa; }
+        .stat-value.cost { color: #10b981; }
         .stat-sub {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #10b98199;
-            margin-top: 2px;
+            font-size: 0.75rem; color: #10b98199; margin-top: 2px;
         }
-
         .chart-container {
             background: linear-gradient(180deg, #111118 0%, #0a0a0f 100%);
-            border: 1px solid #27272a;
-            border-radius: 16px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 16px;
+            border: 1px solid #27272a; border-radius: 16px;
+            padding: 24px; position: relative; overflow: hidden; margin-bottom: 16px;
         }
-
         .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
             background: linear-gradient(90deg, transparent, #10b98133, transparent);
         }
-
-        .chart-wrapper {
-            position: relative;
-            height: 400px;
-        }
-
-        .legend {
-            display: flex;
-            gap: 24px;
-            margin-bottom: 16px;
-        }
-
+        .chart-wrapper { position: relative; height: 400px; }
+        .legend { display: flex; gap: 24px; margin-bottom: 16px; }
         .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: #a1a1aa;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.8rem; color: #a1a1aa;
         }
-
-        .legend-color {
-            width: 16px;
-            height: 3px;
-            border-radius: 2px;
-        }
-
-        .legend-color.price {
-            background: #71717a;
-        }
-
+        .legend-color { width: 16px; height: 3px; border-radius: 2px; }
+        .legend-color.price { background: #71717a; }
         .legend-band {
-            width: 16px;
-            height: 10px;
-            border-radius: 2px;
-            background: #10b98130;
-            border: 1px solid #10b98160;
+            width: 16px; height: 10px; border-radius: 3px;
+            background: linear-gradient(180deg, #10b98135, #10b98110);
         }
-
         .last-updated {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 0.75rem;
-            color: #52525b;
+            text-align: center; margin-top: 16px;
+            font-size: 0.75rem; color: #52525b;
         }
-
         .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 400px;
-            color: #71717a;
+            display: flex; align-items: center; justify-content: center;
+            height: 400px; color: #71717a;
         }
-
-        .error {
-            text-align: center;
-            padding: 60px 20px;
-            color: #ef4444;
-        }
-
+        .error { text-align: center; padding: 60px 20px; color: #ef4444; }
         @media (max-width: 640px) {
-            body {
-                padding: 16px;
-            }
-
-            .header {
-                flex-direction: column;
-            }
-
-            .stats {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .stat-card {
-                text-align: left;
-            }
-
-            .chart-wrapper {
-                height: 300px;
-            }
+            body { padding: 16px; }
+            .header { flex-direction: column; }
+            .stats { width: 100%; justify-content: space-between; }
+            .stat-card { text-align: left; }
+            .chart-wrapper { height: 300px; }
         }
     </style>
 </head>
@@ -211,7 +100,6 @@
                 </div>
             </div>
         </div>
-
         <div class="chart-container">
             <div class="legend">
                 <div class="legend-item">
@@ -227,7 +115,6 @@
                 <div class="loading">Loading data...</div>
             </div>
         </div>
-
         <div class="last-updated" id="last-updated"></div>
     </div>
 
@@ -236,10 +123,8 @@
 
         function formatCurrency(value) {
             return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
+                style: 'currency', currency: 'USD',
+                minimumFractionDigits: 0, maximumFractionDigits: 0
             }).format(value);
         }
 
@@ -261,12 +146,18 @@
                 formatCurrency(data.current_cost_low) + ' – ' + formatCurrency(data.current_cost_high);
         }
 
+        function createBandGradient(ctx, chartArea) {
+            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+            gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.16)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.06)');
+            return gradient;
+        }
+
         function createChart(data) {
             const wrapper = document.getElementById('chart-wrapper');
             wrapper.innerHTML = '<canvas id="miningChart"></canvas>';
-
             const ctx = document.getElementById('miningChart').getContext('2d');
-
             const dates = data.dates.map(d => new Date(d));
 
             chart = new Chart(ctx, {
@@ -289,22 +180,26 @@
                         {
                             label: 'Mining Cost High',
                             data: data.mining_cost_high,
-                            borderColor: '#10b98140',
-                            backgroundColor: '#10b98118',
-                            borderWidth: 1.5,
-                            tension: 0.3,
+                            borderColor: 'transparent',
+                            borderWidth: 0,
+                            tension: 0.45,
                             pointRadius: 0,
                             pointHoverRadius: 0,
                             fill: '+1',
+                            backgroundColor: function(context) {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return 'rgba(16, 185, 129, 0.15)';
+                                return createBandGradient(ctx, chartArea);
+                            },
                             order: 2
                         },
                         {
                             label: 'Mining Cost Low',
                             data: data.mining_cost_low,
-                            borderColor: '#10b98140',
-                            backgroundColor: '#10b98118',
-                            borderWidth: 1.5,
-                            tension: 0.3,
+                            borderColor: 'transparent',
+                            borderWidth: 0,
+                            tension: 0.45,
                             pointRadius: 0,
                             pointHoverRadius: 0,
                             fill: false,
@@ -315,14 +210,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
                             backgroundColor: '#18181b',
                             borderColor: '#27272a',
@@ -338,9 +228,7 @@
                                 title: function(context) {
                                     const date = new Date(context[0].parsed.x);
                                     return date.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
+                                        month: 'short', day: 'numeric', year: 'numeric'
                                     });
                                 },
                                 label: function(context) {
@@ -353,6 +241,12 @@
                                         return 'Mining Cost: ' + formatCurrency(low) + ' – ' + formatCurrency(high);
                                     }
                                     return null;
+                                },
+                                labelColor: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return { borderColor: '#71717a', backgroundColor: '#71717a' };
+                                    }
+                                    return { borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.3)' };
                                 }
                             }
                         }
@@ -360,38 +254,20 @@
                     scales: {
                         x: {
                             type: 'time',
-                            time: {
-                                unit: 'month',
-                                displayFormats: {
-                                    month: 'MMM yyyy'
-                                }
-                            },
-                            grid: {
-                                color: '#27272a',
-                                drawBorder: false
-                            },
+                            time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
+                            grid: { color: '#27272a', drawBorder: false },
                             ticks: {
                                 color: '#52525b',
-                                font: {
-                                    family: "'JetBrains Mono', monospace",
-                                    size: 11
-                                },
+                                font: { family: "'JetBrains Mono', monospace", size: 11 },
                                 maxTicksLimit: 12
                             }
                         },
                         y: {
-                            type: 'linear',
-                            position: 'left',
-                            grid: {
-                                color: '#27272a',
-                                drawBorder: false
-                            },
+                            type: 'linear', position: 'left',
+                            grid: { color: '#27272a', drawBorder: false },
                             ticks: {
                                 color: '#71717a',
-                                font: {
-                                    family: "'JetBrains Mono', monospace",
-                                    size: 11
-                                },
+                                font: { family: "'JetBrains Mono', monospace", size: 11 },
                                 callback: function(value) {
                                     return '$' + (value / 1000).toFixed(0) + 'k';
                                 }
@@ -404,25 +280,19 @@
 
         async function init() {
             const data = await loadData();
-
             if (!data || !data.dates || data.dates.length === 0) {
                 document.getElementById('chart-wrapper').innerHTML =
                     '<div class="error">데이터를 불러올 수 없습니다.</div>';
                 return;
             }
-
             updateStats(data);
             createChart(data);
-
             if (data.last_updated) {
                 document.getElementById('last-updated').textContent =
-                    `Last updated: ${new Date(data.last_updated).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}`;
+                    'Last updated: ' + new Date(data.last_updated).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
             }
         }
 
