@@ -1,210 +1,118 @@
-"""
-Bitcoin Mining Cost Calculator
-Fetches hashrate data from blockchain.com and calculates mining cost over 2 years.
-"""
-
 import json
 import requests
 from datetime import datetime, timedelta
 
-# Configuration
+# 파일 저장 설정
 DATA_FILE = 'data.json'
 
-# Mining parameters
-EFFICIENCY_J_PER_TH = 25  # Joules per Terahash (industry average for modern miners)
-ELECTRICITY_LOW = 0.05    # $/kWh (efficient miners)
-ELECTRICITY_MID = 0.06    # $/kWh (average)
-ELECTRICITY_HIGH = 0.07   # $/kWh (less efficient)
+# --- 경제적 파라미터 (전문 차트 기준) ---
+# 1. 전기료 ($/kWh): 글로벌 평균 채굴 비용은 보통 0.07$ 내외입니다.
+ELECTRICITY_LOW = 0.05
+ELECTRICITY_MID = 0.07
+ELECTRICITY_HIGH = 0.09
 
-# Halving date - block reward changed from 6.25 to 3.125
+# 2. 채굴기 효율성 (J/TH): 시간이 흐를수록 기술 발달로 낮아집니다.
+EFFICIENCY_PAST = 38.0  # 2년 전 평균 (S19급)
+EFFICIENCY_NOW = 22.0   # 현재 평균 (S19 XP, S21급 반영)
+
+# 3. 추가 비용 계수: PUE(냉각/인프라) 1.1 + 풀 수수료 및 기타 1.05 = 약 1.15
+OVERHEAD_FACTOR = 1.15
+
+# 반감기 날짜 (보상 6.25 -> 3.125)
 HALVING_DATE = datetime(2024, 4, 20)
 
+def get_dynamic_efficiency(date):
+    """날짜에 따라 네트워크 평균 채굴 효율(J/TH)을 선형적으로 추정"""
+    start_date = datetime.now() - timedelta(days=730) # 2년 전
+    end_date = datetime.now()
+    
+    if date <= start_date: return EFFICIENCY_PAST
+    if date >= end_date: return EFFICIENCY_NOW
+    
+    total_days = (end_date - start_date).days
+    elapsed_days = (date - start_date).days
+    
+    # 과거에서 현재로 올수록 J/TH 수치가 낮아짐 (효율 개선)
+    efficiency = EFFICIENCY_PAST - ((EFFICIENCY_PAST - EFFICIENCY_NOW) * (elapsed_days / total_days))
+    return efficiency
 
 def get_block_reward(date):
-    """Get block reward based on date (accounting for halving)"""
-    if date >= HALVING_DATE:
-        return 3.125
-    else:
-        return 6.25
+    return 3.125 if date >= HALVING_DATE else 6.25
 
-
-def calculate_mining_cost(hashrate_th_s, block_reward, electricity_price):
-    """
-    Calculate the cost to mine 1 BTC.
+def calculate_mining_cost(hashrate_h_s, block_reward, electricity_price, date):
+    # 1. 단위 변환: API의 H/s -> TH/s (10의 12승)
+    hashrate_th_s = hashrate_h_s / 1_000_000_000_000
     
-    Args:
-        hashrate_th_s: Network hashrate in TH/s
-        block_reward: BTC reward per block
-        electricity_price: Cost per kWh in USD
+    # 2. 해당 날짜의 추정 효율성 및 보상
+    efficiency = get_dynamic_efficiency(date)
     
-    Returns:
-        Cost to mine 1 BTC in USD
-    """
-    # Daily BTC produced by the network
-    blocks_per_day = 144
-    daily_btc = blocks_per_day * block_reward
+    # 3. 하루 생산량 및 소모 전력 계산
+    # 일일 생산 BTC = 144 블록 * 블록 보상
+    daily_btc_network = 144 * block_reward
     
-    # Daily energy consumption (kWh)
-    # Hashrate (TH/s) × Efficiency (J/TH) × seconds_per_day / 1,000,000 (J to kWh)
+    # 일일 전체 네트워크 에너지 소모량 (kWh)
+    # (TH/s * J/TH * 86400초) / 3,600,000 (J -> kWh 변환)
     seconds_per_day = 86400
-    joules_per_day = hashrate_th_s * EFFICIENCY_J_PER_TH * seconds_per_day
-    kwh_per_day = joules_per_day / 3_600_000  # 1 kWh = 3,600,000 J
+    daily_energy_kwh = (hashrate_th_s * efficiency * seconds_per_day) / 3_600_000
     
-    # Daily electricity cost
-    daily_cost = kwh_per_day * electricity_price
-    
-    # Cost per BTC
-    cost_per_btc = daily_cost / daily_btc
+    # 4. 오버헤드 반영 및 최종 원가 계산
+    total_daily_cost = daily_energy_kwh * electricity_price * OVERHEAD_FACTOR
+    cost_per_btc = total_daily_cost / daily_btc_network
     
     return cost_per_btc
 
-
-def fetch_hashrate_data():
-    """Fetch 2 years of hashrate data from blockchain.com"""
-    print("📡 Fetching hashrate data from blockchain.com...")
-    
-    url = "https://api.blockchain.info/charts/hash-rate"
-    params = {
-        'timespan': '2years',
-        'format': 'json',
-        'sampled': 'true'  # Reduces data points for performance
-    }
-    
+def fetch_data(url_path):
+    url = f"https://api.blockchain.info/charts/{url_path}"
+    params = {'timespan': '2years', 'format': 'json', 'sampled': 'true'}
     try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        print(f"   ✅ Got {len(data['values'])} data points")
-        return data['values']
-    
+        r = requests.get(url, params=params)
+        r.raise_for_status()
+        return r.json()['values']
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"Error fetching {url_path}: {e}")
         return None
-
-
-def fetch_btc_price_data():
-    """Fetch 2 years of BTC price data from blockchain.com"""
-    print("📡 Fetching BTC price data from blockchain.com...")
-    
-    url = "https://api.blockchain.info/charts/market-price"
-    params = {
-        'timespan': '2years',
-        'format': 'json',
-        'sampled': 'true'
-    }
-    
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        print(f"   ✅ Got {len(data['values'])} data points")
-        return data['values']
-    
-    except Exception as e:
-        print(f"   ❌ Error: {e}")
-        return None
-
-
-def align_data(hashrate_data, price_data):
-    """Align hashrate and price data by date"""
-    print("🔄 Aligning data...")
-    
-    # Convert to dictionaries keyed by date
-    hashrate_by_date = {}
-    for item in hashrate_data:
-        date = datetime.utcfromtimestamp(item['x']).strftime('%Y-%m-%d')
-        hashrate_by_date[date] = item['y']
-    
-    price_by_date = {}
-    for item in price_data:
-        date = datetime.utcfromtimestamp(item['x']).strftime('%Y-%m-%d')
-        price_by_date[date] = item['y']
-    
-    # Find common dates
-    common_dates = sorted(set(hashrate_by_date.keys()) & set(price_by_date.keys()))
-    
-    print(f"   ✅ {len(common_dates)} common dates")
-    
-    return common_dates, hashrate_by_date, price_by_date
-
 
 def main():
-    print("🚀 Starting Bitcoin Mining Cost calculation...\n")
+    print("🚀 데이터 분석 시작...")
     
-    # Fetch data
-    hashrate_data = fetch_hashrate_data()
-    price_data = fetch_btc_price_data()
+    hash_data = fetch_data('hash-rate')
+    price_data = fetch_data('market-price')
     
-    if not hashrate_data or not price_data:
-        print("❌ Failed to fetch data")
-        return
+    if not hash_data or not price_data: return
+
+    # 날짜 기준 데이터 정렬
+    hash_dict = {datetime.utcfromtimestamp(i['x']).strftime('%Y-%m-%d'): i['y'] for i in hash_data}
+    price_dict = {datetime.utcfromtimestamp(i['x']).strftime('%Y-%m-%d'): i['y'] for i in price_data}
     
-    # Align data
-    dates, hashrate_by_date, price_by_date = align_data(hashrate_data, price_data)
-    
-    # Calculate mining costs
-    print("\n💰 Calculating mining costs...")
+    common_dates = sorted(set(hash_dict.keys()) & set(price_dict.keys()))
     
     results = {
-        'dates': [],
-        'btc_prices': [],
-        'mining_cost_low': [],
-        'mining_cost_mid': [],
-        'mining_cost_high': [],
-        'hashrates': []
+        'dates': [], 'btc_prices': [], 'mining_cost_low': [],
+        'mining_cost_mid': [], 'mining_cost_high': [], 'last_updated': ''
     }
-    
-    for date_str in dates:
-        date = datetime.strptime(date_str, '%Y-%m-%d')
-        hashrate = hashrate_by_date[date_str]
-        price = price_by_date[date_str]
-        block_reward = get_block_reward(date)
+
+    for d_str in common_dates:
+        date_obj = datetime.strptime(d_str, '%Y-%m-%d')
+        h_raw = hash_dict[d_str]
+        reward = get_block_reward(date_obj)
         
-        # Calculate costs for different electricity prices
-        cost_low = calculate_mining_cost(hashrate, block_reward, ELECTRICITY_LOW)
-        cost_mid = calculate_mining_cost(hashrate, block_reward, ELECTRICITY_MID)
-        cost_high = calculate_mining_cost(hashrate, block_reward, ELECTRICITY_HIGH)
-        
-        results['dates'].append(date_str)
-        results['btc_prices'].append(round(price, 2))
-        results['mining_cost_low'].append(round(cost_low, 2))
-        results['mining_cost_mid'].append(round(cost_mid, 2))
-        results['mining_cost_high'].append(round(cost_high, 2))
-        results['hashrates'].append(round(hashrate, 2))
-    
-    # Get current values
-    current_price = results['btc_prices'][-1]
-    current_cost = results['mining_cost_mid'][-1]
-    current_hashrate = results['hashrates'][-1]
-    
-    print(f"\n📊 Current Stats:")
-    print(f"   BTC Price: ${current_price:,.0f}")
-    print(f"   Mining Cost (mid): ${current_cost:,.0f}")
-    print(f"   Hashrate: {current_hashrate / 1e9:.2f} EH/s")
-    print(f"   Margin: {((current_price - current_cost) / current_cost * 100):.1f}%")
-    
-    # Add metadata
-    results['current_price'] = current_price
-    results['current_cost_low'] = results['mining_cost_low'][-1]
-    results['current_cost_mid'] = current_cost
-    results['current_cost_high'] = results['mining_cost_high'][-1]
-    results['current_hashrate_eh'] = round(current_hashrate / 1e9, 2)
+        results['dates'].append(d_str)
+        results['btc_prices'].append(round(price_dict[d_str], 2))
+        results['mining_cost_low'].append(round(calculate_mining_cost(h_raw, reward, ELECTRICITY_LOW, date_obj), 2))
+        results['mining_cost_mid'].append(round(calculate_mining_cost(h_raw, reward, ELECTRICITY_MID, date_obj), 2))
+        results['mining_cost_high'].append(round(calculate_mining_cost(h_raw, reward, ELECTRICITY_HIGH, date_obj), 2))
+
+    # 메타데이터 추가
+    results['current_price'] = results['btc_prices'][-1]
+    results['current_cost_mid'] = results['mining_cost_mid'][-1]
     results['last_updated'] = datetime.utcnow().isoformat() + 'Z'
-    results['parameters'] = {
-        'efficiency_j_per_th': EFFICIENCY_J_PER_TH,
-        'electricity_low': ELECTRICITY_LOW,
-        'electricity_mid': ELECTRICITY_MID,
-        'electricity_high': ELECTRICITY_HIGH
-    }
-    
-    # Save to JSON
+
     with open(DATA_FILE, 'w') as f:
         json.dump(results, f, indent=2)
     
-    print(f"\n💾 Saved to {DATA_FILE}")
-
+    print(f"✅ 완료! {DATA_FILE}이 생성되었습니다.")
+    print(f"현재 비트코인 가격: ${results['current_price']:,}")
+    print(f"현재 추정 채굴 원가: ${results['current_cost_mid']:,}")
 
 if __name__ == '__main__':
     main()
