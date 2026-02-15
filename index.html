@@ -114,7 +114,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
     <div class="card">
         <div class="legend">
             <div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>
-            <div class="legend-item"><div class="legend-band"></div><span>Mining Cost ($0.05–$0.07/kWh)</span></div>
+            <div class="legend-item"><div class="legend-band"></div><span>Mining Cost ($0.05–$0.07/kWh + HW Depreciation)</span></div>
         </div>
         <div class="chart-wrapper watermark" id="chart-wrapper">
             <div class="loading"><div class="spinner"></div>데이터 로딩 중...</div>
@@ -186,7 +186,7 @@ function copyLink(btn) {
     } catch(e) { showToast('복사 실패'); }
 }
 
-// ===== ORIGINAL CHART LOGIC =====
+// ===== CHART LOGIC =====
 let chart = null;
 
 function formatCurrency(value) {
