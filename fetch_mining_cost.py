@@ -19,8 +19,9 @@ ELECTRICITY_HIGH = 0.07
 EFFICIENCY_PAST = 32.0
 EFFICIENCY_NOW = 25.0
 
-# 3. 오버헤드: PUE(냉각) ~1.08 + 풀 수수료/기타 ~1.04 ≈ 1.12
-OVERHEAD_FACTOR = 1.12
+# 3. 오버헤드: 순수 Electrical Cost (Charles Edwards 모델 기준)
+#    TradingView BTC:Electrical Cost와 동일한 방식
+OVERHEAD_FACTOR = 1.0
 
 # 4. 트랜잭션 수수료 비율
 TX_FEE_RATIO_PAST = 0.05   # 반감기 전
