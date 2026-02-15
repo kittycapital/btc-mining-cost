@@ -39,11 +39,17 @@ def get_dynamic_efficiency(date):
 def get_block_reward(date):
     return 3.125 if date >= HALVING_DATE else 6.25
 
-def calculate_mining_cost(hashrate_h_s, block_reward, electricity_price, date):
-    # 1. 단위 변환: API의 H/s -> TH/s (10의 12승)
-    hashrate_th_s = hashrate_h_s / 1_000_000_000_000
+def calculate_mining_cost(hashrate_gh_s, block_reward, electricity_price, date):
+    """
+    채굴 원가 계산
     
-    # 2. 해당 날짜의 추정 효율성 및 보상
+    주의: blockchain.info API는 해시레이트를 GH/s 단위로 반환합니다.
+    GH/s -> TH/s 변환: / 1,000
+    """
+    # 1. 단위 변환: API의 GH/s -> TH/s
+    hashrate_th_s = hashrate_gh_s / 1_000
+    
+    # 2. 해당 날짜의 추정 효율성
     efficiency = get_dynamic_efficiency(date)
     
     # 3. 하루 생산량 및 소모 전력 계산
@@ -105,6 +111,8 @@ def main():
     # 메타데이터 추가
     results['current_price'] = results['btc_prices'][-1]
     results['current_cost_mid'] = results['mining_cost_mid'][-1]
+    results['current_cost_low'] = results['mining_cost_low'][-1]
+    results['current_cost_high'] = results['mining_cost_high'][-1]
     results['last_updated'] = datetime.utcnow().isoformat() + 'Z'
 
     with open(DATA_FILE, 'w') as f:
@@ -113,6 +121,7 @@ def main():
     print(f"✅ 완료! {DATA_FILE}이 생성되었습니다.")
     print(f"현재 비트코인 가격: ${results['current_price']:,}")
     print(f"현재 추정 채굴 원가: ${results['current_cost_mid']:,}")
+    print(f"채굴 원가 범위: ${results['current_cost_low']:,} — ${results['current_cost_high']:,}")
 
 if __name__ == '__main__':
     main()
