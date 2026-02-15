@@ -116,6 +116,18 @@ def main():
         results['mining_cost_mid'].append(round(cost_mid, 2))
         results['mining_cost_high'].append(round(cost_high, 2))
 
+    # 14일 이동평균으로 스무딩 (변동성 감소)
+    def smooth(arr, window=14):
+        result = []
+        for i in range(len(arr)):
+            start = max(0, i - window + 1)
+            result.append(round(sum(arr[start:i+1]) / (i - start + 1), 2))
+        return result
+
+    results['mining_cost_low'] = smooth(results['mining_cost_low'])
+    results['mining_cost_mid'] = smooth(results['mining_cost_mid'])
+    results['mining_cost_high'] = smooth(results['mining_cost_high'])
+
     results['current_price'] = results['btc_prices'][-1]
     results['current_cost_mid'] = results['mining_cost_mid'][-1]
     results['current_cost_low'] = results['mining_cost_low'][-1]
