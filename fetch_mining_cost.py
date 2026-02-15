@@ -14,9 +14,9 @@ ELECTRICITY_LOW = 0.05
 ELECTRICITY_HIGH = 0.07
 
 # 2. 네트워크 평균 효율 (J/TH)
-#    2024 초: S19 Pro 주력 ~32 J/TH
+#    2023 초: S19 주력 ~36 J/TH
 #    2026 현재: S19 XP + S21 혼합 ~25 J/TH
-EFFICIENCY_PAST = 32.0
+EFFICIENCY_PAST = 36.0
 EFFICIENCY_NOW = 25.0
 
 # 3. 오버헤드: 순수 Electrical Cost (Charles Edwards 모델 기준)
@@ -33,7 +33,7 @@ HALVING_DATE = datetime(2024, 4, 20)
 
 def get_dynamic_efficiency(date):
     """네트워크 평균 효율 선형 보간"""
-    start = datetime.now() - timedelta(days=730)
+    start = datetime.now() - timedelta(days=1095)
     end = datetime.now()
     if date <= start: return EFFICIENCY_PAST
     if date >= end: return EFFICIENCY_NOW
@@ -71,7 +71,7 @@ def calculate_cash_cost(hashrate_th_s, block_reward, electricity_price, date):
 
 def fetch_data(url_path):
     url = f"https://api.blockchain.info/charts/{url_path}"
-    params = {'timespan': '2years', 'format': 'json', 'sampled': 'true'}
+    params = {'timespan': '3years', 'format': 'json', 'sampled': 'true'}
     try:
         r = requests.get(url, params=params, timeout=30)
         r.raise_for_status()
