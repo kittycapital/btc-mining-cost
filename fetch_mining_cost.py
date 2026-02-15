@@ -70,14 +70,13 @@ def get_block_reward(date):
     return 3.125 if date >= HALVING_DATE else 6.25
 
 
-def calculate_mining_cost(hashrate_gh_s, block_reward, electricity_price, date):
+def calculate_mining_cost(hashrate_th_s, block_reward, electricity_price, date):
     """
     채굴 원가 계산 (전기료 + 하드웨어 감가상각 - 수수료 수익)
     
-    blockchain.info API는 해시레이트를 GH/s 단위로 반환합니다.
+    blockchain.info API는 해시레이트를 TH/s 단위로 반환합니다.
+    단위 변환 불필요 — 그대로 사용.
     """
-    # 1. 단위 변환: API의 GH/s -> TH/s
-    hashrate_th_s = hashrate_gh_s / 1_000
     
     # 2. 해당 날짜의 파라미터
     efficiency = get_dynamic_efficiency(date)
