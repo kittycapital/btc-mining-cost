@@ -96,7 +96,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 <div class="container">
     <div class="header">
         <div>
-            <div class="title-sub">Bitcoin Cash Cost vs Price · 2 Year</div>
+            <div class="title-sub">Bitcoin Electrical Cost vs Price · 2 Year</div>
         </div>
         <div class="stats">
             <div class="stat-card">
@@ -104,7 +104,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
                 <div class="stat-value price" id="btc-price">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Cash Cost</div>
+                <div class="stat-label">Electrical Cost</div>
                 <div class="stat-value cost" id="mining-cost">--</div>
                 <div class="stat-sub" id="mining-range"></div>
             </div>
@@ -114,7 +114,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
     <div class="card">
         <div class="legend">
             <div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>
-            <div class="legend-item"><div class="legend-band"></div><span>Cash Cost ($0.05–$0.07/kWh)</span></div>
+            <div class="legend-item"><div class="legend-band"></div><span>Electrical Cost ($0.05–$0.07/kWh)</span></div>
         </div>
         <div class="chart-wrapper watermark" id="chart-wrapper">
             <div class="loading"><div class="spinner"></div>데이터 로딩 중...</div>
@@ -136,7 +136,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 
 <script>
 const SHARE_URL = 'https://herdvibe.com/btc-mining-cost';
-const SHARE_TITLE = '비트코인 채굴 원가 - Cash Cost vs Price';
+const SHARE_TITLE = '비트코인 채굴 원가 - Electrical Cost vs Price';
 const SHARE_DESC = '비트코인 채굴 원가와 시세 비교 차트 | Herdvibe';
 
 // Toast
@@ -292,7 +292,7 @@ function createChart(data) {
                                 const idx = context.dataIndex;
                                 const low = context.chart.data.datasets[2].data[idx];
                                 const high = context.raw;
-                                return 'Cash Cost: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
+                                return 'Electrical Cost: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
                             }
                             return null;
                         },
