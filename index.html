@@ -15,11 +15,14 @@ html{scrollbar-width:none}
 html::-webkit-scrollbar{display:none}
 body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-height:100vh}
 
+/* Nav */
 .top-nav{position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);border-bottom:1px solid #1a1a1a;padding:0 16px;display:flex;align-items:center;justify-content:center;height:56px}
 .nav-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.3rem;font-weight:600;color:#e4e4e7;white-space:nowrap}
 
+/* Container */
 .container{max-width:960px;margin:0 auto;padding:16px 12px 60px}
 
+/* Header */
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:16px}
 .title-sub{font-size:12px;color:#71717a;margin-top:4px}
 .stats{display:flex;gap:10px;flex-wrap:wrap}
@@ -27,30 +30,35 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 .stat-label{font-size:11px;color:#71717a;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
 .stat-value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
 .stat-value.price{color:#a1a1aa}
-.stat-value.cost{color:#10b981}
-.stat-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(16,185,129,0.6);margin-top:2px}
+.stat-value.cost{color:#ef4444}
+.stat-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(239,68,68,0.6);margin-top:2px}
 
+/* Card */
 .card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px}
 
-/* Tab row */
+/* Chart */
+.chart-wrapper{position:relative;height:480px}
+.chart-wrapper canvas{width:100%!important;height:100%!important}
+
+/* Watermark */
+.watermark{position:relative}
+.watermark::after{content:'Herdvibe.com';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:rgba(255,255,255,0.06);pointer-events:none;z-index:2;letter-spacing:2px}
+
+/* Legend */
 .tab-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .legend{display:flex;gap:20px;flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#a1a1aa}
 .legend-color{width:16px;height:3px;border-radius:2px}
 .legend-color.price{background:#71717a}
-.legend-band{width:16px;height:10px;border-radius:3px;background:linear-gradient(180deg,rgba(16,185,129,0.35),rgba(16,185,129,0.1))}
+.legend-band{width:16px;height:10px;border-radius:3px;background:linear-gradient(180deg,rgba(239,68,68,0.12),rgba(239,68,68,0.4))}
 
+/* Tabs */
 .tabs{display:flex;gap:4px;background:#111;border-radius:8px;padding:3px}
 .tab-btn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:5px 14px;border-radius:6px;border:none;background:transparent;color:#71717a;cursor:pointer;transition:all 0.2s}
 .tab-btn:hover{color:#a1a1aa}
 .tab-btn.active{background:#1a1a1a;color:#e4e4e7}
 
-.chart-wrapper{position:relative;height:480px}
-.chart-wrapper canvas{width:100%!important;height:100%!important}
-
-.watermark{position:relative}
-.watermark::after{content:'Herdvibe.com';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:rgba(255,255,255,0.06);pointer-events:none;z-index:2;letter-spacing:2px}
-
+/* Share */
 .share-bar{display:flex;gap:6px;justify-content:center;margin:12px 0 4px;flex-wrap:wrap}
 .share-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid #222;background:#0a0a0a;color:#a1a1aa;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all 0.2s}
 .share-btn:hover{border-color:#444;color:#e4e4e7}
@@ -63,6 +71,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 .share-btn.copy:hover{border-color:#22c55e;color:#22c55e}
 .share-btn.copied{border-color:#22c55e;color:#22c55e}
 
+/* Toast */
 .toast{position:fixed;bottom:20px;right:20px;background:#22c55e;color:#000;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.3s ease;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 
@@ -124,7 +133,8 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
         <div class="chart-wrapper watermark" id="chart-wrapper">
             <div class="loading"><div class="spinner"></div>데이터 로딩 중...</div>
         </div>
-        <div class="share-bar">
+        <!-- In-chart share -->
+        <div class="share-bar" style="margin-top:14px">
             <button class="share-btn twitter" onclick="shareTwitter()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>트위터</button>
             <button class="share-btn kakao" onclick="shareKakao()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-5.52 0-10 3.36-10 7.5 0 2.66 1.74 5 4.36 6.33-.14.53-.9 3.4-.93 3.61 0 0-.02.17.09.23.11.07.24.03.24.03.32-.04 3.7-2.42 4.28-2.83.62.09 1.27.13 1.96.13 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/></svg>카카오톡</button>
             <button class="share-btn telegram" onclick="shareTelegram()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>텔레그램</button>
@@ -143,106 +153,151 @@ const SHARE_URL = 'https://herdvibe.com/btc-mining-cost';
 const SHARE_TITLE = '비트코인 채굴 원가 - Electrical Cost vs Price';
 const SHARE_DESC = '비트코인 채굴 원가와 시세 비교 차트 | Herdvibe';
 
+// Toast
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
 }
-function shareTwitter() { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(SHARE_TITLE) + '&url=' + encodeURIComponent(SHARE_URL), '_blank'); }
+
+// Share
+function shareTwitter() {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TITLE)}&url=${encodeURIComponent(SHARE_URL)}`, '_blank');
+}
 function shareKakao() {
     if (window.Kakao && !Kakao.isInitialized()) Kakao.init('a43ed7b39fac35458f4f9df925a279b5');
-    if (window.Kakao) Kakao.Share.sendDefault({ objectType:'feed', content:{ title:SHARE_TITLE, description:SHARE_DESC, imageUrl:'https://herdvibe.com/og-mining.png', link:{ mobileWebUrl:SHARE_URL, webUrl:SHARE_URL }}});
+    if (window.Kakao) {
+        Kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: { title: SHARE_TITLE, description: SHARE_DESC, imageUrl: 'https://herdvibe.com/og-mining.png', link: { mobileWebUrl: SHARE_URL, webUrl: SHARE_URL } }
+        });
+    }
 }
-function shareTelegram() { window.open('https://t.me/share/url?url=' + encodeURIComponent(SHARE_URL) + '&text=' + encodeURIComponent(SHARE_TITLE), '_blank'); }
-function shareInstagram(btn) { clipAndFlash(btn, '링크가 복사되었습니다 - 인스타그램에 붙여넣기 하세요 ✓'); }
-function copyLink(btn) { clipAndFlash(btn, '링크가 복사되었습니다 ✓'); }
-function clipAndFlash(btn, msg) {
+function shareTelegram() {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TITLE)}`, '_blank');
+}
+function shareInstagram(btn) {
     try {
-        if (window.parent !== window) window.parent.postMessage({ type:'copy', text:SHARE_URL }, '*');
-        else navigator.clipboard.writeText(SHARE_URL);
+        if (window.parent !== window) { window.parent.postMessage({ type: 'copy', text: SHARE_URL }, '*'); }
+        else { navigator.clipboard.writeText(SHARE_URL); }
         const orig = btn.innerHTML;
         btn.classList.add('copied');
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>복사됨!';
-        showToast(msg);
+        showToast('링크가 복사되었습니다 - 인스타그램에 붙여넣기 하세요 ✓');
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+    } catch(e) { showToast('복사 실패'); }
+}
+function copyLink(btn) {
+    try {
+        if (window.parent !== window) { window.parent.postMessage({ type: 'copy', text: SHARE_URL }, '*'); }
+        else { navigator.clipboard.writeText(SHARE_URL); }
+        const orig = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>복사됨!';
+        showToast('링크가 복사되었습니다 ✓');
         setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
     } catch(e) { showToast('복사 실패'); }
 }
 
-// ===== CHART =====
+// ===== CHART LOGIC =====
 let chart = null;
 let fullData = null;
 
-function formatCurrency(v) {
-    return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:0, maximumFractionDigits:0 }).format(v);
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: 'USD',
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+    }).format(value);
 }
 
 async function loadData() {
-    try { const r = await fetch('data.json'); if (!r.ok) throw 0; return await r.json(); }
-    catch(e) { return null; }
+    try {
+        const response = await fetch('data.json');
+        if (!response.ok) throw new Error('Data not found');
+        return await response.json();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        return null;
+    }
 }
 
 function updateStats(data) {
     document.getElementById('btc-price').textContent = formatCurrency(data.current_price);
     document.getElementById('mining-cost').textContent = formatCurrency(data.current_cost_mid);
-    document.getElementById('mining-range').textContent = formatCurrency(data.current_cost_low) + ' — ' + formatCurrency(data.current_cost_high);
+    document.getElementById('mining-range').textContent =
+        formatCurrency(data.current_cost_low) + ' — ' + formatCurrency(data.current_cost_high);
 }
 
 function sliceData(data, range) {
     if (range === '3y') return data;
-    const last = new Date(data.dates[data.dates.length - 1]);
-    const cutoff = new Date(last);
+    var last = new Date(data.dates[data.dates.length - 1]);
+    var cutoff = new Date(last);
     cutoff.setFullYear(cutoff.getFullYear() - 1);
-    const cs = cutoff.toISOString().split('T')[0];
-    const si = data.dates.findIndex(d => d >= cs);
-    if (si < 0) return data;
+    var cutoffStr = cutoff.toISOString().split('T')[0];
+    var startIdx = -1;
+    for (var i = 0; i < data.dates.length; i++) {
+        if (data.dates[i] >= cutoffStr) { startIdx = i; break; }
+    }
+    if (startIdx < 0) return data;
     return {
-        dates: data.dates.slice(si),
-        btc_prices: data.btc_prices.slice(si),
-        mining_cost_low: data.mining_cost_low.slice(si),
-        mining_cost_mid: data.mining_cost_mid.slice(si),
-        mining_cost_high: data.mining_cost_high.slice(si),
+        dates: data.dates.slice(startIdx),
+        btc_prices: data.btc_prices.slice(startIdx),
+        mining_cost_low: data.mining_cost_low.slice(startIdx),
+        mining_cost_mid: data.mining_cost_mid.slice(startIdx),
+        mining_cost_high: data.mining_cost_high.slice(startIdx)
     };
 }
 
-function bandGradient(ctx, area) {
-    const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-    g.addColorStop(0, 'rgba(16,185,129,0.28)');
-    g.addColorStop(0.5, 'rgba(16,185,129,0.16)');
-    g.addColorStop(1, 'rgba(16,185,129,0.06)');
-    return g;
+function createBandGradient(ctx, chartArea) {
+    var gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    gradient.addColorStop(0, 'rgba(239, 68, 68, 0.06)');
+    gradient.addColorStop(0.5, 'rgba(239, 68, 68, 0.18)');
+    gradient.addColorStop(1, 'rgba(239, 68, 68, 0.38)');
+    return gradient;
 }
 
-function buildChart(sliced) {
-    const wrapper = document.getElementById('chart-wrapper');
+function createChart(data) {
+    var wrapper = document.getElementById('chart-wrapper');
     wrapper.innerHTML = '<canvas id="miningChart"></canvas>';
-    const ctx = document.getElementById('miningChart').getContext('2d');
+    var ctx = document.getElementById('miningChart').getContext('2d');
+    var dates = [];
+    for (var i = 0; i < data.dates.length; i++) { dates.push(new Date(data.dates[i])); }
 
     chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: sliced.dates.map(d => new Date(d)),
+            labels: dates,
             datasets: [
                 {
-                    label: 'BTC Price', data: sliced.btc_prices,
-                    borderColor: '#71717a', backgroundColor: 'transparent',
-                    borderWidth: 2, tension: 0.1, pointRadius: 0,
-                    pointHoverRadius: 4, pointHoverBackgroundColor: '#71717a', order: 1
+                    label: 'BTC Price',
+                    data: data.btc_prices,
+                    borderColor: '#71717a',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2, tension: 0.1,
+                    pointRadius: 0, pointHoverRadius: 4,
+                    pointHoverBackgroundColor: '#71717a',
+                    order: 1
                 },
                 {
-                    label: 'Electrical Cost High', data: sliced.mining_cost_high,
-                    borderColor: 'transparent', borderWidth: 0, tension: 0.45,
-                    pointRadius: 0, pointHoverRadius: 0, fill: '+1',
-                    backgroundColor: function(c) {
-                        const { ctx, chartArea } = c.chart;
-                        if (!chartArea) return 'rgba(16,185,129,0.15)';
-                        return bandGradient(ctx, chartArea);
-                    }, order: 2
+                    label: 'Mining Cost High',
+                    data: data.mining_cost_high,
+                    borderColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 1.5,
+                    tension: 0.45, pointRadius: 0, pointHoverRadius: 0,
+                    fill: '+1',
+                    backgroundColor: function(context) {
+                        var c = context.chart;
+                        if (!c.chartArea) return 'rgba(239, 68, 68, 0.15)';
+                        return createBandGradient(c.ctx, c.chartArea);
+                    },
+                    order: 2
                 },
                 {
-                    label: 'Electrical Cost Low', data: sliced.mining_cost_low,
-                    borderColor: 'transparent', borderWidth: 0, tension: 0.45,
-                    pointRadius: 0, pointHoverRadius: 0, fill: false, order: 3
+                    label: 'Mining Cost Low',
+                    data: data.mining_cost_low,
+                    borderColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 1.5,
+                    tension: 0.45, pointRadius: 0, pointHoverRadius: 0,
+                    fill: false, order: 3
                 }
             ]
         },
@@ -255,24 +310,31 @@ function buildChart(sliced) {
                 tooltip: {
                     backgroundColor: '#1a1a1a', borderColor: '#333', borderWidth: 1,
                     titleColor: '#e4e4e7', bodyColor: '#a1a1aa', padding: 12,
-                    titleFont: { family: 'JetBrains Mono' }, bodyFont: { family: 'JetBrains Mono' },
+                    titleFont: { family: 'JetBrains Mono' },
+                    bodyFont: { family: 'JetBrains Mono' },
                     displayColors: true,
-                    filter: function(t) { return t.datasetIndex <= 1; },
+                    filter: function(tooltipItem) {
+                        return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 1;
+                    },
                     callbacks: {
-                        title: function(ctx) {
-                            return new Date(ctx[0].parsed.x).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+                        title: function(context) {
+                            var date = new Date(context[0].parsed.x);
+                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         },
-                        label: function(ctx) {
-                            if (ctx.datasetIndex === 0) return 'BTC Price: ' + formatCurrency(ctx.raw);
-                            if (ctx.datasetIndex === 1) {
-                                const low = ctx.chart.data.datasets[2].data[ctx.dataIndex];
-                                return 'Electrical Cost: ' + formatCurrency(low) + ' — ' + formatCurrency(ctx.raw);
+                        label: function(context) {
+                            if (context.datasetIndex === 0) {
+                                return 'BTC Price: ' + formatCurrency(context.raw);
+                            } else if (context.datasetIndex === 1) {
+                                var idx = context.dataIndex;
+                                var low = context.chart.data.datasets[2].data[idx];
+                                var high = context.raw;
+                                return 'Electrical Cost: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
                             }
                             return null;
                         },
-                        labelColor: function(ctx) {
-                            if (ctx.datasetIndex === 0) return { borderColor:'#71717a', backgroundColor:'#71717a' };
-                            return { borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.3)' };
+                        labelColor: function(context) {
+                            if (context.datasetIndex === 0) return { borderColor: '#71717a', backgroundColor: '#71717a' };
+                            return { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.3)' };
                         }
                     }
                 }
@@ -290,7 +352,7 @@ function buildChart(sliced) {
                     ticks: {
                         color: '#71717a',
                         font: { family: "'JetBrains Mono', monospace", size: 10 },
-                        callback: function(v) { return '$' + (v/1000).toFixed(0) + 'k'; }
+                        callback: function(value) { return '$' + (value / 1000).toFixed(0) + 'k'; }
                     }
                 }
             }
@@ -300,29 +362,31 @@ function buildChart(sliced) {
 
 function setRange(range) {
     if (!fullData) return;
-
-    // Update tabs
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range));
-
-    // Update subtitle
-    const label = range === '1y' ? '1 Year' : '3 Year';
+    var btns = document.querySelectorAll('.tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute('data-range') === range) { btns[i].className = 'tab-btn active'; }
+        else { btns[i].className = 'tab-btn'; }
+    }
+    var label = range === '1y' ? '1 Year' : '3 Year';
     document.getElementById('title-sub').textContent = 'Bitcoin Electrical Cost vs Price · ' + label;
-
-    // Rebuild chart
     if (chart) { chart.destroy(); chart = null; }
-    buildChart(sliceData(fullData, range));
+    createChart(sliceData(fullData, range));
 }
 
 async function init() {
     fullData = await loadData();
     if (!fullData || !fullData.dates || fullData.dates.length === 0) {
-        document.getElementById('chart-wrapper').innerHTML = '<div class="error">데이터를 불러올 수 없습니다.</div>';
+        document.getElementById('chart-wrapper').innerHTML =
+            '<div class="error">데이터를 불러올 수 없습니다.</div>';
         return;
     }
     updateStats(fullData);
     setRange('3y');
     if (fullData.last_updated) {
-        document.getElementById('last-updated').textContent = 'Last updated: ' + new Date(fullData.last_updated).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+        document.getElementById('last-updated').textContent =
+            'Last updated: ' + new Date(fullData.last_updated).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
     }
 }
 
