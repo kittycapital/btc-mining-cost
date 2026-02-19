@@ -316,13 +316,35 @@ function createChart(data, range) {
     var wrapper = document.getElementById('chart-wrapper');
     wrapper.innerHTML = '<canvas id="miningChart"></canvas>';
     var ctx = document.getElementById('miningChart').getContext('2d');
+
+    // Filter out entries where btc_price is null (keep mining cost nulls ok)
+    var filteredDates = [];
+    var filteredPrices = [];
+    var filteredCostLow = [];
+    var filteredCostMid = [];
+    var filteredCostHigh = [];
+    for (var i = 0; i < data.dates.length; i++) {
+        if (data.btc_prices[i] != null) {
+            filteredDates.push(data.dates[i]);
+            filteredPrices.push(data.btc_prices[i]);
+            filteredCostLow.push(data.mining_cost_low ? data.mining_cost_low[i] : null);
+            filteredCostMid.push(data.mining_cost_mid ? data.mining_cost_mid[i] : null);
+            filteredCostHigh.push(data.mining_cost_high ? data.mining_cost_high[i] : null);
+        }
+    }
+
     var dates = [];
-    for (var i = 0; i < data.dates.length; i++) { dates.push(new Date(data.dates[i])); }
+    for (var i = 0; i < filteredDates.length; i++) { dates.push(new Date(filteredDates[i] + 'T00:00:00')); }
 
     var timeUnit = 'month';
-    var maxTicks = 12;
-    if (range === '5y') { timeUnit = 'quarter'; maxTicks = 10; }
-    else if (range === 'all') { timeUnit = 'year'; maxTicks = 12; }
+    var maxTicks = 14;
+    if (range === '5y') { timeUnit = 'quarter'; maxTicks = 12; }
+    else if (range === 'all') { timeUnit = 'year'; maxTicks = 14; }
+
+    // Explicit axis bounds
+    var xMin = dates[0];
+    var xMax = new Date(dates[dates.length - 1]);
+    xMax.setDate(xMax.getDate() + 7); // pad 1 week so last data point isn't at the edge
 
     chart = new Chart(ctx, {
         type: 'line',
@@ -331,7 +353,7 @@ function createChart(data, range) {
             datasets: [
                 {
                     label: 'BTC Price',
-                    data: data.btc_prices,
+                    data: filteredPrices,
                     borderColor: '#71717a',
                     backgroundColor: 'transparent',
                     borderWidth: 2, tension: 0.1,
@@ -342,7 +364,7 @@ function createChart(data, range) {
                 },
                 {
                     label: 'Mining Cost High',
-                    data: data.mining_cost_high,
+                    data: filteredCostHigh,
                     borderColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 1.5,
                     tension: 0.45, pointRadius: 0, pointHoverRadius: 0,
                     spanGaps: true,
@@ -356,7 +378,7 @@ function createChart(data, range) {
                 },
                 {
                     label: 'Mining Cost Low',
-                    data: data.mining_cost_low,
+                    data: filteredCostLow,
                     borderColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 1.5,
                     tension: 0.45, pointRadius: 0, pointHoverRadius: 0,
                     spanGaps: true,
@@ -391,6 +413,7 @@ function createChart(data, range) {
                                 var idx = context.dataIndex;
                                 var low = context.chart.data.datasets[2].data[idx];
                                 var high = context.raw;
+                                if (low == null || high == null) return null;
                                 return '전기 가격 기준: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
                             }
                             return null;
@@ -405,6 +428,8 @@ function createChart(data, range) {
             scales: {
                 x: {
                     type: 'time',
+                    min: xMin,
+                    max: xMax,
                     time: { unit: timeUnit, displayFormats: { month: 'MMM yyyy', quarter: 'MMM yyyy', year: 'yyyy' } },
                     grid: { color: '#1a1a1a' },
                     ticks: { color: '#71717a', font: { family: "'JetBrains Mono', monospace", size: 10 }, maxTicksLimit: maxTicks }
