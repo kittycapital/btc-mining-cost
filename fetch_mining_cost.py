@@ -13,73 +13,58 @@ BTC_CSV_FILE = 'BTC_USD.csv'
 ELECTRICITY_LOW = 0.05
 ELECTRICITY_HIGH = 0.07
 
-# 네트워크 평균 효율 (J/TH) - 연도별 모델
-# 실제 채굴기 세대별 효율 반영
 EFFICIENCY_TABLE = [
-    # (date, J/TH)
-    ('2009-01-01', 9000),   # CPU mining
-    ('2011-01-01', 5000),   # GPU mining
-    ('2013-01-01', 1000),   # Early ASIC
-    ('2014-01-01', 500),    # Antminer S1/S3
-    ('2015-01-01', 340),    # Antminer S5
-    ('2016-01-01', 250),    # Antminer S7
-    ('2017-01-01', 100),    # Antminer S9
-    ('2018-01-01', 95),     # Antminer S9 dominant
-    ('2019-01-01', 70),     # S9 + S15/S17 mix
-    ('2020-01-01', 55),     # S17/S19 mix
-    ('2021-01-01', 45),     # S19 dominant
-    ('2022-01-01', 38),     # S19 Pro/XP
-    ('2023-01-01', 34),     # S19 XP + S21 early
-    ('2024-01-01', 28),     # S21 rollout
-    ('2025-01-01', 25),     # S21 dominant
-    ('2026-01-01', 24),     # S21+ / next gen
+    ('2009-01-01', 9000),
+    ('2011-01-01', 5000),
+    ('2013-01-01', 1000),
+    ('2014-01-01', 500),
+    ('2015-01-01', 340),
+    ('2016-01-01', 250),
+    ('2017-01-01', 100),
+    ('2018-01-01', 95),
+    ('2019-01-01', 70),
+    ('2020-01-01', 55),
+    ('2021-01-01', 45),
+    ('2022-01-01', 38),
+    ('2023-01-01', 34),
+    ('2024-01-01', 28),
+    ('2025-01-01', 25),
+    ('2026-01-01', 24),
 ]
 
-# 오버헤드: 순수 Electrical Cost (Charles Edwards 모델 기준)
 OVERHEAD_FACTOR = 1.0
-
 TX_FEE_RATIO_PAST = 0.05
 TX_FEE_RATIO_NOW = 0.08
 
-# 반감기 목록
 HALVINGS = [
-    datetime(2012, 11, 28),  # 50 -> 25
-    datetime(2016, 7, 9),    # 25 -> 12.5
-    datetime(2020, 5, 11),   # 12.5 -> 6.25
-    datetime(2024, 4, 20),   # 6.25 -> 3.125
+    datetime(2012, 11, 28),
+    datetime(2016, 7, 9),
+    datetime(2020, 5, 11),
+    datetime(2024, 4, 20),
 ]
 
 
 def get_dynamic_efficiency(date):
-    """연도별 효율 테이블에서 선형 보간"""
     table = [(datetime.strptime(d, '%Y-%m-%d'), v) for d, v in EFFICIENCY_TABLE]
-
-    if date <= table[0][0]:
-        return table[0][1]
-    if date >= table[-1][0]:
-        return table[-1][1]
-
+    if date <= table[0][0]: return table[0][1]
+    if date >= table[-1][0]: return table[-1][1]
     for i in range(len(table) - 1):
         if table[i][0] <= date < table[i + 1][0]:
             days_total = (table[i + 1][0] - table[i][0]).days
             days_elapsed = (date - table[i][0]).days
             ratio = days_elapsed / days_total if days_total > 0 else 0
             return table[i][1] + (table[i + 1][1] - table[i][1]) * ratio
-
     return table[-1][1]
 
 
 def get_tx_fee_ratio(date):
-    """트랜잭션 수수료 비율"""
     latest_halving = HALVINGS[-1]
-    if date < latest_halving:
-        return TX_FEE_RATIO_PAST
+    if date < latest_halving: return TX_FEE_RATIO_PAST
     d = (date - latest_halving).days
     return TX_FEE_RATIO_PAST + (TX_FEE_RATIO_NOW - TX_FEE_RATIO_PAST) * min(d / 180, 1.0)
 
 
 def get_block_reward(date):
-    """반감기별 블록 보상"""
     reward = 50.0
     for h in HALVINGS:
         if date >= h:
@@ -90,23 +75,18 @@ def get_block_reward(date):
 
 
 def calculate_cash_cost(hashrate_th_s, block_reward, electricity_price, date):
-    """BTC당 Cash Cost = 전기료 / 일일 BTC 생산량"""
     efficiency = get_dynamic_efficiency(date)
     tx_fee_ratio = get_tx_fee_ratio(date)
-
     daily_btc = 144 * block_reward * (1 + tx_fee_ratio)
     daily_energy_kwh = (hashrate_th_s * efficiency * 86400) / 3_600_000
     daily_electricity = daily_energy_kwh * electricity_price * OVERHEAD_FACTOR
-
     return daily_electricity / daily_btc
 
 
 def generate_btc_history_json():
-    """Convert BTC_USD.csv to btc_history.json for frontend use"""
     if not os.path.exists(BTC_CSV_FILE):
         print(f"[INFO] {BTC_CSV_FILE} not found, skipping")
         return False
-
     print(f"[CSV] Reading {BTC_CSV_FILE}...")
     prices = {}
     with open(BTC_CSV_FILE, 'r') as f:
@@ -114,29 +94,34 @@ def generate_btc_history_json():
         for row in reader:
             date = row['Date'].strip()
             try:
-                close = round(float(row['Close']), 2)
-                prices[date] = close
+                prices[date] = round(float(row['Close']), 2)
             except (ValueError, KeyError):
                 continue
-
     with open(BTC_HISTORY_FILE, 'w') as f:
         json.dump(prices, f)
-
     dates = sorted(prices.keys())
-    print(f"   [OK] Generated {BTC_HISTORY_FILE}: {len(prices)} days ({dates[0]} ~ {dates[-1]})")
+    print(f"   [OK] {BTC_HISTORY_FILE}: {len(prices)} days ({dates[0]} ~ {dates[-1]})")
     return True
 
 
-def fetch_data(url_path, timespan='all'):
+def fetch_api(url_path, timespan, sampled=False):
+    """blockchain.info API fetch"""
     url = f"https://api.blockchain.info/charts/{url_path}"
     params = {'timespan': timespan, 'format': 'json'}
+    if sampled:
+        params['sampled'] = 'true'
     try:
         r = requests.get(url, params=params, timeout=60)
         r.raise_for_status()
-        return r.json()['values']
+        values = r.json()['values']
+        result = {}
+        for item in values:
+            d = datetime.utcfromtimestamp(item['x']).strftime('%Y-%m-%d')
+            result[d] = item['y']
+        return result
     except Exception as e:
-        print(f"[ERR] Error fetching {url_path}: {e}")
-        return None
+        print(f"   [ERR] {url_path} ({timespan}): {e}")
+        return {}
 
 
 def main():
@@ -145,24 +130,41 @@ def main():
     # Generate btc_history.json from CSV
     generate_btc_history_json()
 
-    # Fetch all available data from blockchain.info
-    print("[API] Fetching hash-rate (all)...")
-    hash_data = fetch_data('hash-rate', 'all')
-    print("[API] Fetching market-price (all)...")
-    price_data = fetch_data('market-price', 'all')
+    # === DUAL FETCH: recent daily + historical sampled ===
+    # blockchain.info timespan=all returns 4-day sampled data, often weeks behind
+    # So we fetch recent 1 year separately for daily, up-to-date data
 
-    if not hash_data or not price_data:
+    print("[API] Fetching hash-rate (recent 1y, daily)...")
+    hash_recent = fetch_api('hash-rate', '1year', sampled=False)
+    print(f"   [OK] {len(hash_recent)} daily points")
+
+    print("[API] Fetching hash-rate (all, sampled)...")
+    hash_hist = fetch_api('hash-rate', 'all', sampled=True)
+    print(f"   [OK] {len(hash_hist)} sampled points")
+
+    print("[API] Fetching market-price (recent 1y, daily)...")
+    price_recent = fetch_api('market-price', '1year', sampled=False)
+    print(f"   [OK] {len(price_recent)} daily points")
+
+    print("[API] Fetching market-price (all, sampled)...")
+    price_hist = fetch_api('market-price', 'all', sampled=True)
+    print(f"   [OK] {len(price_hist)} sampled points")
+
+    # Merge: historical base, recent overrides
+    hash_dict = {**hash_hist, **hash_recent}
+    price_dict = {**price_hist, **price_recent}
+
+    if not hash_dict or not price_dict:
         print("[ERR] API data unavailable")
         return
 
-    hash_dict = {datetime.utcfromtimestamp(i['x']).strftime('%Y-%m-%d'): i['y'] for i in hash_data}
-    price_dict = {datetime.utcfromtimestamp(i['x']).strftime('%Y-%m-%d'): i['y'] for i in price_data}
-
-    print(f"   [OK] Hash-rate: {len(hash_dict)} days")
-    print(f"   [OK] Price: {len(price_dict)} days")
+    hash_dates = sorted(hash_dict.keys())
+    price_dates = sorted(price_dict.keys())
+    print(f"\n[MERGE] Hash-rate: {len(hash_dict)} ({hash_dates[0]} ~ {hash_dates[-1]})")
+    print(f"[MERGE] Price: {len(price_dict)} ({price_dates[0]} ~ {price_dates[-1]})")
 
     common_dates = sorted(set(hash_dict.keys()) & set(price_dict.keys()))
-    print(f"   [OK] Common dates: {len(common_dates)} ({common_dates[0]} ~ {common_dates[-1]})")
+    print(f"[MERGE] Common: {len(common_dates)} ({common_dates[0]} ~ {common_dates[-1]})")
 
     results = {
         'dates': [], 'btc_prices': [], 'mining_cost_low': [],
@@ -184,7 +186,7 @@ def main():
         results['mining_cost_mid'].append(round(cost_mid, 2))
         results['mining_cost_high'].append(round(cost_high, 2))
 
-    # 14일 이동평균으로 스무딩
+    # 14일 이동평균 스무딩
     def smooth(arr, window=14):
         result = []
         for i in range(len(arr)):
@@ -205,8 +207,9 @@ def main():
     with open(DATA_FILE, 'w') as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n[SAVE] Saved to {DATA_FILE}")
-    print(f"   Date range: {results['dates'][0]} ~ {results['dates'][-1]}")
+    print(f"\n[SAVE] {DATA_FILE}")
+    print(f"   Range: {results['dates'][0]} ~ {results['dates'][-1]}")
+    print(f"   Total: {len(results['dates'])} data points")
     print(f"   BTC Price: ${results['current_price']:,.0f}")
     print(f"   Cash Cost: ${results['current_cost_mid']:,.0f} "
           f"(${results['current_cost_low']:,.0f} - ${results['current_cost_high']:,.0f})")
