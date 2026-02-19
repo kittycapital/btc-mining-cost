@@ -30,6 +30,8 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 .stat-label{font-size:11px;color:#71717a;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
 .stat-value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
 .stat-value.price{color:#a1a1aa}
+.live-dot{display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;margin-left:4px;vertical-align:middle;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .stat-value.cost{color:#ef4444}
 .stat-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(239,68,68,0.6);margin-top:2px}
 
@@ -45,7 +47,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 .watermark::after{content:'Herdvibe.com';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:rgba(255,255,255,0.06);pointer-events:none;z-index:2;letter-spacing:2px}
 
 /* Legend */
-.tab-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.tab-row{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;gap:10px}
 .legend{display:flex;gap:20px;flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#a1a1aa}
 .legend-color{width:16px;height:3px;border-radius:2px}
@@ -91,7 +93,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
   .chart-wrapper{height:380px}
   .loading{height:380px}
   .watermark::after{font-size:20px}
-  .tab-row{flex-direction:column;align-items:flex-start}
+  .tab-row{flex-direction:column;align-items:center}
 }
 </style>
 </head>
@@ -104,7 +106,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 <div class="container">
     <div class="header">
         <div>
-            <div class="title-sub" id="title-sub">Bitcoin Electrical Cost vs Price · 3 Year</div>
+            <div class="title-sub" id="title-sub">Bitcoin Mining Cost vs Price · 3 Year</div>
         </div>
         <div class="stats">
             <div class="stat-card">
@@ -112,7 +114,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
                 <div class="stat-value price" id="btc-price">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Electrical Cost</div>
+                <div class="stat-label">전기 가격 기준</div>
                 <div class="stat-value cost" id="mining-cost">--</div>
                 <div class="stat-sub" id="mining-range"></div>
             </div>
@@ -123,7 +125,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
         <div class="tab-row">
             <div class="legend">
                 <div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>
-                <div class="legend-item"><div class="legend-band"></div><span>Electrical Cost ($0.05–$0.07/kWh)</span></div>
+                <div class="legend-item"><div class="legend-band"></div><span>전기 가격 기준 ($0.05–$0.07/kWh)</span></div>
             </div>
             <div class="tabs">
                 <button class="tab-btn" data-range="1y" onclick="setRange('1y')">1Y</button>
@@ -152,7 +154,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 
 <script>
 const SHARE_URL = 'https://herdvibe.com/btc-mining-cost';
-const SHARE_TITLE = '비트코인 채굴 원가 - Electrical Cost vs Price';
+const SHARE_TITLE = '비트코인 채굴 원가 | Herdvibe';
 const SHARE_DESC = '비트코인 채굴 원가와 시세 비교 차트 | Herdvibe';
 
 // Toast
@@ -279,9 +281,7 @@ function updateStats(data) {
 }
 
 function sliceData(range) {
-    var source = (range === '1y' || range === '3y') ? fullData : mergedData;
-    if (!source) source = fullData;
-
+    var source = mergedData || fullData;
     if (range === 'all') return source;
 
     var yearMap = { '1y': 1, '3y': 3, '5y': 5 };
@@ -337,6 +337,7 @@ function createChart(data, range) {
                     borderWidth: 2, tension: 0.1,
                     pointRadius: 0, pointHoverRadius: 4,
                     pointHoverBackgroundColor: '#71717a',
+                    spanGaps: true,
                     order: 1
                 },
                 {
@@ -390,7 +391,7 @@ function createChart(data, range) {
                                 var idx = context.dataIndex;
                                 var low = context.chart.data.datasets[2].data[idx];
                                 var high = context.raw;
-                                return 'Electrical Cost: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
+                                return '전기 가격 기준: ' + formatCurrency(low) + ' — ' + formatCurrency(high);
                             }
                             return null;
                         },
@@ -433,7 +434,7 @@ function setRange(range) {
         else { btns[i].className = 'tab-btn'; }
     }
     var labels = { '1y': '1 Year', '3y': '3 Year', '5y': '5 Year', 'all': 'All Time' };
-    document.getElementById('title-sub').textContent = 'Bitcoin Electrical Cost vs Price · ' + (labels[range] || range);
+    document.getElementById('title-sub').textContent = 'Bitcoin Mining Cost vs Price · ' + (labels[range] || range);
     if (chart) { chart.destroy(); chart = null; }
     createChart(sliceData(range), range);
 }
@@ -458,6 +459,39 @@ async function init() {
 }
 
 init();
+
+/* BINANCE WEBSOCKET — live BTC price */
+var _ws = null, _wsRetry = 0;
+function connectBinance() {
+    try {
+        _ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+        _ws.onopen = function() { _wsRetry = 0; };
+        _ws.onmessage = function(e) {
+            try {
+                var d = JSON.parse(e.data);
+                var price = parseFloat(d.p);
+                document.getElementById('btc-price').innerHTML =
+                    formatCurrency(price) + '<span class="live-dot"></span>';
+            } catch(ex) {}
+        };
+        _ws.onclose = function() {
+            if (_wsRetry < 10) setTimeout(connectBinance, Math.min(3000 * Math.pow(1.5, _wsRetry++), 30000));
+        };
+        _ws.onerror = function() { _ws.close(); };
+    } catch(e) {
+        // fallback: REST
+        fetchBtcRest(); setInterval(fetchBtcRest, 10000);
+    }
+}
+async function fetchBtcRest() {
+    try {
+        var r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+        var d = await r.json();
+        document.getElementById('btc-price').innerHTML =
+            formatCurrency(parseFloat(d.price)) + '<span class="live-dot"></span>';
+    } catch(e) {}
+}
+connectBinance();
 </script>
 </body>
 </html>
