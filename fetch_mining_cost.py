@@ -129,7 +129,7 @@ def generate_btc_history_json():
 
 def fetch_data(url_path, timespan='all'):
     url = f"https://api.blockchain.info/charts/{url_path}"
-    params = {'timespan': timespan, 'format': 'json', 'sampled': 'true'}
+    params = {'timespan': timespan, 'format': 'json'}
     try:
         r = requests.get(url, params=params, timeout=60)
         r.raise_for_status()
