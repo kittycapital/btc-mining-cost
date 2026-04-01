@@ -35,7 +35,9 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 .live-dot{display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;margin-left:4px;vertical-align:middle;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .stat-value.cost{color:#ef4444}
+.stat-value.sigma{color:#f59e0b}
 .stat-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(239,68,68,0.6);margin-top:2px}
+.stat-sub.sigma-sub{color:rgba(245,158,11,0.6)}
 
 /* Card */
 .card{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px}
@@ -50,13 +52,19 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 
 /* Legend */
 .tab-row{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;gap:10px}
-.legend{display:flex;gap:20px;flex-wrap:wrap}
+.legend{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#a1a1aa}
 .legend-color{width:16px;height:3px;border-radius:2px}
 .legend-color.price{background:#71717a}
 .legend-band{width:16px;height:10px;border-radius:3px;background:linear-gradient(180deg,rgba(239,68,68,0.12),rgba(239,68,68,0.4))}
 
-/* Tabs */
+/* View Tabs (main) */
+.view-tabs{display:flex;gap:4px;background:#111;border-radius:8px;padding:3px;margin-bottom:10px}
+.view-tab-btn{font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;padding:6px 18px;border-radius:6px;border:none;background:transparent;color:#71717a;cursor:pointer;transition:all 0.2s}
+.view-tab-btn:hover{color:#a1a1aa}
+.view-tab-btn.active{background:#1a1a1a;color:#e4e4e7}
+
+/* Tabs (range) */
 .tabs{display:flex;gap:4px;background:#111;border-radius:8px;padding:3px}
 .tab-btn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:5px 14px;border-radius:6px;border:none;background:transparent;color:#71717a;cursor:pointer;transition:all 0.2s}
 .tab-btn:hover{color:#a1a1aa}
@@ -88,6 +96,16 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
 @keyframes spin{to{transform:rotate(360deg)}}
 .error{text-align:center;padding:60px 20px;color:#ef4444;font-size:13px}
 
+/* STD band legend colors */
+.legend-color.std-mid{background:#f59e0b}
+.legend-color.std-1{background:rgba(34,197,94,0.7)}
+.legend-color.std-2{background:rgba(249,115,22,0.7)}
+.legend-color.std-3{background:rgba(239,68,68,0.7)}
+.legend-band-std{width:16px;height:10px;border-radius:3px}
+.legend-band-std.zone-cold{background:linear-gradient(180deg,rgba(34,197,94,0.1),rgba(34,197,94,0.35))}
+.legend-band-std.zone-warm{background:linear-gradient(180deg,rgba(249,115,22,0.1),rgba(249,115,22,0.35))}
+.legend-band-std.zone-hot{background:linear-gradient(180deg,rgba(239,68,68,0.1),rgba(239,68,68,0.4))}
+
 @media(max-width:640px){
   .top-nav{padding:0 10px;height:52px}
   .nav-title{font-size:1.1rem}
@@ -99,6 +117,7 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
   .loading{height:380px}
   .watermark::after{font-size:20px}
   .tab-row{flex-direction:column;align-items:center}
+  .view-tabs{width:100%;justify-content:center}
 }
 </style>
 </head>
@@ -123,15 +142,27 @@ body{background:#000;color:#e4e4e7;font-family:'Noto Sans KR',sans-serif;min-hei
                 <div class="stat-value cost" id="mining-cost">--</div>
                 <div class="stat-sub" id="mining-range"></div>
             </div>
+            <div class="stat-card" id="sigma-card" style="display:none">
+                <div class="stat-label">현재 σ 위치</div>
+                <div class="stat-value sigma" id="sigma-value">--</div>
+                <div class="stat-sub sigma-sub" id="sigma-zone"></div>
+            </div>
         </div>
     </div>
 
     <div class="card">
         <div class="tab-row">
-            <div class="legend">
+            <!-- View mode tabs -->
+            <div class="view-tabs">
+                <button class="view-tab-btn active" onclick="setViewMode('cost')">채굴원가</button>
+                <button class="view-tab-btn" onclick="setViewMode('std')">STD 밴드</button>
+            </div>
+            <!-- Legend (dynamic) -->
+            <div class="legend" id="legend-area">
                 <div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>
                 <div class="legend-item"><div class="legend-band"></div><span>전기 가격 기준 ($0.05–$0.07/kWh)</span></div>
             </div>
+            <!-- Range tabs -->
             <div class="tabs">
                 <button class="tab-btn" data-range="1y" onclick="setRange('1y')">1Y</button>
                 <button class="tab-btn active" data-range="3y" onclick="setRange('3y')">3Y</button>
@@ -217,6 +248,9 @@ let chart = null;
 let fullData = null;
 let btcHistory = null;
 let mergedData = null;
+let currentRange = '3y';
+let currentView = 'cost'; // 'cost' or 'std'
+let stdStats = null; // { meanLR, stdLR } — log-ratio stats
 
 function formatCurrency(value) {
     return new Intl.NumberFormat('en-US', {
@@ -248,7 +282,6 @@ async function loadBtcHistory() {
 
 function buildMergedData() {
     if (!fullData) return;
-    // Build date map from data.json (has mining cost)
     var dateMap = {};
     for (var i = 0; i < fullData.dates.length; i++) {
         dateMap[fullData.dates[i]] = {
@@ -258,7 +291,6 @@ function buildMergedData() {
             costHigh: fullData.mining_cost_high[i]
         };
     }
-    // Add BTC prices from CSV history (dates not in data.json)
     if (btcHistory) {
         var histDates = Object.keys(btcHistory).sort();
         for (var j = 0; j < histDates.length; j++) {
@@ -270,7 +302,6 @@ function buildMergedData() {
             }
         }
     }
-    // Build sorted arrays
     var allDates = Object.keys(dateMap).sort();
     mergedData = {
         dates: allDates,
@@ -279,6 +310,180 @@ function buildMergedData() {
         mining_cost_mid: allDates.map(function(d) { return dateMap[d].costMid; }),
         mining_cost_high: allDates.map(function(d) { return dateMap[d].costHigh; })
     };
+}
+
+/* ===== STD BAND CALCULATIONS ===== */
+function computeStdStats() {
+    // Use ALL available data (mergedData or fullData) to compute stats
+    var source = mergedData || fullData;
+    if (!source) return;
+
+    var logRatios = [];
+    for (var i = 0; i < source.dates.length; i++) {
+        var p = source.btc_prices[i];
+        var c = source.mining_cost_mid[i];
+        if (p != null && c != null && p > 0 && c > 0) {
+            logRatios.push(Math.log(p / c));
+        }
+    }
+
+    if (logRatios.length < 10) { stdStats = null; return; }
+
+    var sum = 0;
+    for (var i = 0; i < logRatios.length; i++) sum += logRatios[i];
+    var mean = sum / logRatios.length;
+
+    var sqSum = 0;
+    for (var i = 0; i < logRatios.length; i++) sqSum += (logRatios[i] - mean) * (logRatios[i] - mean);
+    var std = Math.sqrt(sqSum / logRatios.length);
+
+    stdStats = { meanLR: mean, stdLR: std };
+}
+
+function getStdBandData(data) {
+    // For each date with mining_cost_mid, compute bands
+    // Band at nσ: cost_mid × exp(mean + n × std)
+    if (!stdStats) return null;
+
+    var bands = {
+        dates: [],
+        prices: [],
+        costMid: [],
+        bandMean: [],    // exp(mean) × cost_mid — mean multiple
+        bandP1: [],      // +1σ
+        bandP2: [],      // +2σ
+        bandP3: [],      // +3σ
+        bandM1: [],      // -1σ
+        bandM2: []       // -2σ
+    };
+
+    var mMean = Math.exp(stdStats.meanLR);
+    var mP1 = Math.exp(stdStats.meanLR + 1 * stdStats.stdLR);
+    var mP2 = Math.exp(stdStats.meanLR + 2 * stdStats.stdLR);
+    var mP3 = Math.exp(stdStats.meanLR + 3 * stdStats.stdLR);
+    var mM1 = Math.exp(stdStats.meanLR - 1 * stdStats.stdLR);
+    var mM2 = Math.exp(stdStats.meanLR - 2 * stdStats.stdLR);
+
+    for (var i = 0; i < data.dates.length; i++) {
+        var p = data.btc_prices[i];
+        var c = data.mining_cost_mid[i];
+
+        if (p == null) continue;
+
+        bands.dates.push(data.dates[i]);
+        bands.prices.push(p);
+
+        if (c != null && c > 0) {
+            bands.costMid.push(c);
+            bands.bandMean.push(c * mMean);
+            bands.bandP1.push(c * mP1);
+            bands.bandP2.push(c * mP2);
+            bands.bandP3.push(c * mP3);
+            bands.bandM1.push(c * mM1);
+            bands.bandM2.push(c * mM2);
+        } else {
+            bands.costMid.push(null);
+            bands.bandMean.push(null);
+            bands.bandP1.push(null);
+            bands.bandP2.push(null);
+            bands.bandP3.push(null);
+            bands.bandM1.push(null);
+            bands.bandM2.push(null);
+        }
+    }
+
+    return bands;
+}
+
+function getCurrentSigma() {
+    if (!stdStats || !fullData) return null;
+    var p = fullData.current_price || fullData.btc_prices[fullData.btc_prices.length - 1];
+    var c = fullData.current_cost_mid || fullData.mining_cost_mid[fullData.mining_cost_mid.length - 1];
+    if (!p || !c || c <= 0) return null;
+
+    var lr = Math.log(p / c);
+    var sigma = (lr - stdStats.meanLR) / stdStats.stdLR;
+    return sigma;
+}
+
+function getSigmaZoneText(sigma) {
+    if (sigma >= 3) return '🔴 극단적 과열';
+    if (sigma >= 2) return '🟠 과열 구간';
+    if (sigma >= 1) return '🟡 평균 이상';
+    if (sigma >= 0) return '🟢 평균 부근';
+    if (sigma >= -1) return '🔵 저평가';
+    return '⚪ 극단적 저평가';
+}
+
+function updateSigmaCard() {
+    var sigma = getCurrentSigma();
+    var card = document.getElementById('sigma-card');
+    if (currentView === 'std' && sigma !== null) {
+        card.style.display = '';
+        document.getElementById('sigma-value').textContent = sigma.toFixed(2) + 'σ';
+        document.getElementById('sigma-zone').textContent = getSigmaZoneText(sigma);
+        // Color based on sigma
+        var el = document.getElementById('sigma-value');
+        if (sigma >= 2) el.style.color = '#ef4444';
+        else if (sigma >= 1) el.style.color = '#f59e0b';
+        else if (sigma >= 0) el.style.color = '#22c55e';
+        else el.style.color = '#3b82f6';
+    } else {
+        card.style.display = 'none';
+    }
+}
+
+/* ===== VIEW MODE ===== */
+function setViewMode(mode) {
+    currentView = mode;
+    // Update view tabs
+    var btns = document.querySelectorAll('.view-tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+    }
+    if (mode === 'cost') btns[0].classList.add('active');
+    else btns[1].classList.add('active');
+
+    // Update legend
+    updateLegend(mode);
+
+    // Update sigma card
+    updateSigmaCard();
+
+    // Update subtitle
+    updateSubtitle();
+
+    // Rebuild chart
+    if (chart) { chart.destroy(); chart = null; }
+    document.getElementById('zoom-reset').style.display = 'none';
+
+    if (mode === 'cost') {
+        createChart(sliceData(currentRange), currentRange);
+    } else {
+        createStdChart(sliceData(currentRange), currentRange);
+    }
+}
+
+function updateLegend(mode) {
+    var area = document.getElementById('legend-area');
+    if (mode === 'cost') {
+        area.innerHTML =
+            '<div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>' +
+            '<div class="legend-item"><div class="legend-band"></div><span>전기 가격 기준 ($0.05–$0.07/kWh)</span></div>';
+    } else {
+        area.innerHTML =
+            '<div class="legend-item"><div class="legend-color price"></div><span>BTC Price</span></div>' +
+            '<div class="legend-item"><div class="legend-color std-mid"></div><span>Mean (μ)</span></div>' +
+            '<div class="legend-item"><div class="legend-band-std zone-cold"></div><span>±1σ</span></div>' +
+            '<div class="legend-item"><div class="legend-band-std zone-warm"></div><span>1σ–2σ</span></div>' +
+            '<div class="legend-item"><div class="legend-band-std zone-hot"></div><span>2σ–3σ (Top 구간)</span></div>';
+    }
+}
+
+function updateSubtitle() {
+    var labels = { '1y': '1 Year', '3y': '3 Year', '5y': '5 Year', 'all': 'All Time' };
+    var prefix = currentView === 'cost' ? 'Bitcoin Mining Cost vs Price' : 'Mining Cost STD Band';
+    document.getElementById('title-sub').textContent = prefix + ' · ' + (labels[currentRange] || currentRange);
 }
 
 function updateStats(data) {
@@ -320,12 +525,12 @@ function createBandGradient(ctx, chartArea) {
     return gradient;
 }
 
+/* ===== ORIGINAL MINING COST CHART ===== */
 function createChart(data, range) {
     var wrapper = document.getElementById('chart-wrapper');
     wrapper.innerHTML = '<button class="zoom-reset-btn" id="zoom-reset" onclick="resetChartZoom()">↺ Reset Zoom</button><canvas id="miningChart"></canvas>';
     var ctx = document.getElementById('miningChart').getContext('2d');
 
-    // Filter out entries where btc_price is null (keep mining cost nulls ok)
     var filteredDates = [];
     var filteredPrices = [];
     var filteredCostLow = [];
@@ -349,10 +554,9 @@ function createChart(data, range) {
     if (range === '5y') { timeUnit = 'quarter'; maxTicks = 12; }
     else if (range === 'all') { timeUnit = 'year'; maxTicks = 14; }
 
-    // Explicit axis bounds
     var xMin = dates[0];
     var xMax = new Date(dates[dates.length - 1]);
-    xMax.setDate(xMax.getDate() + 7); // pad 1 week so last data point isn't at the edge
+    xMax.setDate(xMax.getDate() + 7);
 
     chart = new Chart(ctx, {
         type: 'line',
@@ -473,18 +677,261 @@ function createChart(data, range) {
     });
 }
 
+/* ===== STD BAND CHART ===== */
+function createStdChart(data, range) {
+    if (!stdStats) {
+        document.getElementById('chart-wrapper').innerHTML = '<div class="error">STD 밴드 데이터를 계산할 수 없습니다 (데이터 부족).</div>';
+        return;
+    }
+
+    var bandData = getStdBandData(data);
+    if (!bandData || bandData.dates.length === 0) {
+        document.getElementById('chart-wrapper').innerHTML = '<div class="error">밴드 데이터가 없습니다.</div>';
+        return;
+    }
+
+    var wrapper = document.getElementById('chart-wrapper');
+    wrapper.innerHTML = '<button class="zoom-reset-btn" id="zoom-reset" onclick="resetChartZoom()">↺ Reset Zoom</button><canvas id="miningChart"></canvas>';
+    var ctx = document.getElementById('miningChart').getContext('2d');
+
+    var dates = [];
+    for (var i = 0; i < bandData.dates.length; i++) { dates.push(new Date(bandData.dates[i] + 'T00:00:00')); }
+
+    var timeUnit = 'month';
+    var maxTicks = 14;
+    if (range === '5y') { timeUnit = 'quarter'; maxTicks = 12; }
+    else if (range === 'all') { timeUnit = 'year'; maxTicks = 14; }
+
+    var xMin = dates[0];
+    var xMax = new Date(dates[dates.length - 1]);
+    xMax.setDate(xMax.getDate() + 7);
+
+    // Datasets order (bottom to top for fills):
+    // 0: BTC Price (main line, on top)
+    // 1: Mean line (μ)
+    // 2: +3σ (top border of hot zone)
+    // 3: +2σ (fill down to +2σ = hot zone)
+    // 4: +1σ (fill down to +1σ = warm zone)
+    // 5: -1σ (fill up to mean = cold zone, fill down = cool zone)
+    // 6: -2σ (fill up to -1σ = very cold)
+    // 7: Mining Cost Mid (base reference)
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                // 0: BTC Price
+                {
+                    label: 'BTC Price',
+                    data: bandData.prices,
+                    borderColor: '#e4e4e7',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5, tension: 0.1,
+                    pointRadius: 0, pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#e4e4e7',
+                    spanGaps: true,
+                    order: 0
+                },
+                // 1: Mean (μ)
+                {
+                    label: 'Mean (μ)',
+                    data: bandData.bandMean,
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [6, 3],
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: false,
+                    order: 1
+                },
+                // 2: +3σ — fill down to +2σ (hot zone)
+                {
+                    label: '+3σ',
+                    data: bandData.bandP3,
+                    borderColor: 'rgba(239, 68, 68, 0.6)',
+                    borderWidth: 1,
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: '+1', // fill to dataset index 3 (+2σ)
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    order: 4
+                },
+                // 3: +2σ — fill down to +1σ (warm zone)
+                {
+                    label: '+2σ',
+                    data: bandData.bandP2,
+                    borderColor: 'rgba(249, 115, 22, 0.6)',
+                    borderWidth: 1,
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: '+1', // fill to dataset index 4 (+1σ)
+                    backgroundColor: 'rgba(249, 115, 22, 0.12)',
+                    order: 5
+                },
+                // 4: +1σ — fill down to mean (mild zone)
+                {
+                    label: '+1σ',
+                    data: bandData.bandP1,
+                    borderColor: 'rgba(234, 179, 8, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: '-3', // fill to dataset index 1 (mean)
+                    backgroundColor: 'rgba(234, 179, 8, 0.08)',
+                    order: 6
+                },
+                // 5: -1σ — fill up to mean (cool zone)
+                {
+                    label: '-1σ',
+                    data: bandData.bandM1,
+                    borderColor: 'rgba(34, 197, 94, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: '-4', // fill to dataset index 1 (mean)
+                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                    order: 7
+                },
+                // 6: -2σ — fill up to -1σ (cold zone)
+                {
+                    label: '-2σ',
+                    data: bandData.bandM2,
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    borderWidth: 1,
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: '-1', // fill to dataset index 5 (-1σ)
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    order: 8
+                },
+                // 7: Mining Cost Mid (thin dashed reference)
+                {
+                    label: 'Mining Cost',
+                    data: bandData.costMid,
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    borderWidth: 1,
+                    borderDash: [2, 4],
+                    tension: 0.4, pointRadius: 0, pointHoverRadius: 0,
+                    spanGaps: true,
+                    fill: false,
+                    order: 9
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 400 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a1a1a', borderColor: '#333', borderWidth: 1,
+                    titleColor: '#e4e4e7', bodyColor: '#a1a1aa', padding: 12,
+                    titleFont: { family: 'JetBrains Mono' },
+                    bodyFont: { family: 'JetBrains Mono' },
+                    displayColors: true,
+                    filter: function(tooltipItem) {
+                        // Show: BTC Price (0), Mean (1), +2σ (3), +3σ (2)
+                        return [0, 1, 2, 3].indexOf(tooltipItem.datasetIndex) !== -1;
+                    },
+                    callbacks: {
+                        title: function(context) {
+                            var date = new Date(context[0].parsed.x);
+                            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        },
+                        label: function(context) {
+                            var val = context.raw;
+                            if (val == null) return null;
+                            var dsIdx = context.datasetIndex;
+                            if (dsIdx === 0) {
+                                // Calculate current sigma for this point
+                                var idx = context.dataIndex;
+                                var cMid = chart.data.datasets[7].data[idx];
+                                var sigTxt = '';
+                                if (cMid != null && cMid > 0 && stdStats) {
+                                    var lr = Math.log(val / cMid);
+                                    var sig = (lr - stdStats.meanLR) / stdStats.stdLR;
+                                    sigTxt = ' (' + sig.toFixed(1) + 'σ)';
+                                }
+                                return 'BTC: ' + formatCurrency(val) + sigTxt;
+                            }
+                            if (dsIdx === 1) return 'Mean (μ): ' + formatCurrency(val);
+                            if (dsIdx === 2) return '+3σ: ' + formatCurrency(val);
+                            if (dsIdx === 3) return '+2σ: ' + formatCurrency(val);
+                            return null;
+                        },
+                        labelColor: function(context) {
+                            var colors = {
+                                0: { borderColor: '#e4e4e7', backgroundColor: '#e4e4e7' },
+                                1: { borderColor: '#f59e0b', backgroundColor: '#f59e0b' },
+                                2: { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.3)' },
+                                3: { borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.3)' }
+                            };
+                            return colors[context.datasetIndex] || { borderColor: '#71717a', backgroundColor: '#71717a' };
+                        }
+                    }
+                },
+                zoom: {
+                    zoom: {
+                        wheel: { enabled: true },
+                        pinch: { enabled: true },
+                        drag: { enabled: false },
+                        mode: 'x',
+                        onZoom: function() { document.getElementById('zoom-reset').style.display = 'block'; }
+                    },
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                        onPan: function() { document.getElementById('zoom-reset').style.display = 'block'; }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    min: xMin,
+                    max: xMax,
+                    time: { unit: timeUnit, displayFormats: { month: 'MMM yyyy', quarter: 'MMM yyyy', year: 'yyyy' } },
+                    grid: { color: '#1a1a1a' },
+                    ticks: { color: '#71717a', font: { family: "'JetBrains Mono', monospace", size: 10 }, maxTicksLimit: maxTicks }
+                },
+                y: {
+                    type: 'logarithmic', position: 'left',
+                    grid: { color: '#1a1a1a' },
+                    ticks: {
+                        color: '#71717a',
+                        font: { family: "'JetBrains Mono', monospace", size: 10 },
+                        callback: function(value) {
+                            if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k';
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function setRange(range) {
     if (!fullData) return;
+    currentRange = range;
     var btns = document.querySelectorAll('.tab-btn');
     for (var i = 0; i < btns.length; i++) {
         if (btns[i].getAttribute('data-range') === range) { btns[i].className = 'tab-btn active'; }
         else { btns[i].className = 'tab-btn'; }
     }
-    var labels = { '1y': '1 Year', '3y': '3 Year', '5y': '5 Year', 'all': 'All Time' };
-    document.getElementById('title-sub').textContent = 'Bitcoin Mining Cost vs Price · ' + (labels[range] || range);
+    updateSubtitle();
     if (chart) { chart.destroy(); chart = null; }
     document.getElementById('zoom-reset').style.display = 'none';
-    createChart(sliceData(range), range);
+
+    if (currentView === 'cost') {
+        createChart(sliceData(range), range);
+    } else {
+        createStdChart(sliceData(range), range);
+    }
 }
 
 function resetChartZoom() {
@@ -500,6 +947,7 @@ async function init() {
         return;
     }
     buildMergedData();
+    computeStdStats();
     updateStats(fullData);
     setRange('3y');
     if (fullData.last_updated) {
@@ -531,7 +979,6 @@ function connectBinance() {
         };
         _ws.onerror = function() { _ws.close(); };
     } catch(e) {
-        // fallback: REST
         fetchBtcRest(); setInterval(fetchBtcRest, 10000);
     }
 }
